@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Capri" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/capri_ground</item>
+        <item name="android:colorBackground">@color/capri_ground</item>
+        <item name="android:colorAccent">@color/capri_cyan</item>
+        <item name="android:colorPrimary">@color/capri_pink</item>
+        <item name="android:colorControlActivated">@color/capri_cyan</item>
+        <item name="android:textColorPrimary">@color/capri_white</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="Theme.Capri.Light" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/capri_paper</item>
+        <item name="android:colorBackground">@color/capri_paper</item>
+        <item name="android:colorAccent">@color/capri_pink</item>
+        <item name="android:colorPrimary">@color/capri_pink</item>
+        <item name="android:colorControlActivated">@color/capri_pink</item>
+        <item name="android:textColorPrimary">@color/capri_ink</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <!-- Screens that only start something: no window of their own, no flash. -->
+    <style name="Theme.Capri.Translucent" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

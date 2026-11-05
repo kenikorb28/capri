@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Capri</string>
+    <string name="accessibility_label">Capri — mains sur l\'écran</string>
+    <string name="accessibility_description">Permet à Capri, uniquement quand tu le lui demandes : de lire le texte de l\'écran (jamais les champs de mot de passe), de faire une capture pour l\'expliquer, d\'appuyer sur Retour, Accueil, Notifications ou Verrouiller, et de toucher ou taper dans une app pour une tâche que tu as demandée. Une notification et la bulle montrent quand elle agit. Les actions sensibles (envoyer, payer, supprimer) suivent tes réglages SÉCURITÉ. Rien n\'est lu ni envoyé en arrière-plan. Tu peux couper ce service à tout moment ici.</string>
+    <string name="notification_access_label">Capri — lire tes notifications</string>
+    <string name="tile_label">Capri</string>
+    <string name="process_text_label">Expliquer avec Capri</string>
+    <string name="share_label">Envoyer à Capri</string>
+    <string name="shortcut_talk_short">Parler</string>
+    <string name="shortcut_talk_long">Parler à Capri</string>
+    <string name="shortcut_chat_short">Écrire</string>
+    <string name="shortcut_chat_long">Écrire à Capri</string>
+    <string name="shortcut_bubble_short">Bulle</string>
+    <string name="shortcut_bubble_long">Afficher la bulle Capri</string>
+</resources>

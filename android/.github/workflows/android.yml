@@ -1,0 +1,23 @@
+# Builds Capri's debug APK and runs her tests on GitHub's machines, for when Android Studio isn't at hand.
+name: Capri Android
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Test and build
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :core:test :app:testDebugUnitTest :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capri-debug-apk
+          path: app/build/outputs/apk/debug/*.apk

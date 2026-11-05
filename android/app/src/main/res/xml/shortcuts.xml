@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_mic"
+        android:shortcutId="talk"
+        android:shortcutLongLabel="@string/shortcut_talk_long"
+        android:shortcutShortLabel="@string/shortcut_talk_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.capri.assistant.ui.ListenActivity"
+            android:targetPackage="com.capri.assistant" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_chat"
+        android:shortcutId="chat"
+        android:shortcutLongLabel="@string/shortcut_chat_long"
+        android:shortcutShortLabel="@string/shortcut_chat_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.capri.assistant.ui.ChatActivity"
+            android:targetPackage="com.capri.assistant" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_bubble"
+        android:shortcutId="bubble"
+        android:shortcutLongLabel="@string/shortcut_bubble_long"
+        android:shortcutShortLabel="@string/shortcut_bubble_short">
+        <intent
+            android:action="com.capri.assistant.SHOW_BUBBLE"
+            android:targetClass="com.capri.assistant.ui.MainActivity"
+            android:targetPackage="com.capri.assistant" />
+    </shortcut>
+</shortcuts>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ASSISTANT role needs sessionService, recognitionService and supportsAssist (PermissionController roles.xml). -->
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:recognitionService="com.capri.assistant.assist.CapriRecognitionService"
+    android:sessionService="com.capri.assistant.assist.CapriSessionService"
+    android:settingsActivity="com.capri.assistant.ui.SettingsActivity"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="false"
+    android:supportsLocalInteraction="false" />

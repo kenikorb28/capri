@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plain http is allowed so she can reach Ollama or LM Studio on the user's own PC over Wi-Fi (http://192.168.x.x:11434).
+     The app's own code refuses to send any API key over plain http unless the address is on their own network
+     (Http.safeForKey in the engine), and every cloud service is called over https. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

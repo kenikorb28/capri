@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Her look, from app/Neon.cs: near-black ground, wine glow, rose, cyan. -->
+    <color name="capri_ground">#FF0A0A10</color>
+    <color name="capri_glow">#FF360E1A</color>
+    <color name="capri_rose">#FFFF5D66</color>
+    <color name="capri_pink">#FFFF2A6D</color>
+    <color name="capri_cyan">#FF5EF0F6</color>
+    <color name="capri_white">#FFECECF1</color>
+    <color name="capri_paper">#FFF6F1EC</color>
+    <color name="capri_ink">#FF1A1520</color>
+</resources>
