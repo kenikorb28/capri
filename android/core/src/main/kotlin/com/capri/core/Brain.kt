@@ -24,6 +24,8 @@ class Brain(val folder: File, val backends: Backends, val memory: Memory, val re
     @Volatile var studyLevel = "normal"
     // A short line about the phone right now (time, battery, network, the app in front), from the phone layer.
     @Volatile var situation: (() -> String)? = null
+    // Capri Link: what they were doing with her on their PC, so "continue ce que je faisais" works from the phone.
+    @Volatile var elsewhere: (() -> String)? = null
     val web = Web(backends.http)
 
     private val history = ArrayList<Msg>()
@@ -48,7 +50,8 @@ class Brain(val folder: File, val backends: Backends, val memory: Memory, val re
 
     private fun clean(text: String?): String = if (Modes.long(mode)) Cleanup.rich(text) else Cleanup.clean(text, wordiness, replyLength > 0)
 
-    private fun now(): String = Persona.now() + (situation?.let { s -> try { s().let { if (it.isBlank()) "" else "\nTheir phone right now: $it" } } catch (e: Exception) { "" } } ?: "")
+    private fun now(): String = Persona.now() + (situation?.let { s -> try { s().let { if (it.isBlank()) "" else "\nTheir phone right now: $it" } } catch (e: Exception) { "" } } ?: "") +
+        (elsewhere?.let { e -> try { e() } catch (ex: Exception) { "" } } ?: "")
 
     // ---- the chat she keeps
 

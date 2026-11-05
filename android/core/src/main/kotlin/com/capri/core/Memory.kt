@@ -27,6 +27,10 @@ class Memory(val folder: File) {
 
     private val noting = Any()
     private val writing = Any()
+
+    // Called after she writes her notes, her memories or a project, so Capri Link can carry it to their PC right away.
+    @Volatile var changed: (() -> Unit)? = null
+    private fun touched() { try { changed?.invoke() } catch (_: Exception) { } }
     private val sightings = ArrayList<Sighting>()
     private val dug = HashMap<String, Pair<String, List<Moment>>>()
     @Volatile var lastLineAt = 0L
@@ -41,6 +45,9 @@ class Memory(val folder: File) {
         val Whereabouts = Regex("(?i:\\baddress(es)?\\b)|\\b\\d{1,5}[A-Za-z]?\\s+(?:[A-Z][\\p{L}']*\\s+){1,3}(?:Street|St|Road|Rd|Avenue|Ave|Lane|Drive|Court|Place|Crescent|Boulevard|Blvd|Way|Terrace|Close|Parade|Highway|Grove|Square)\\b|\\b\\d{1,4},?\\s+(?:rue|avenue|boulevard|bd|allée|impasse|chemin|place)\\s")
 
         fun revealing(text: String): Boolean = Personal.containsMatchIn(text) || Whereabouts.containsMatchIn(text)
+
+        // A project file name both apps accept: letters, digits, spaces, dots, dashes, ending in .md.
+        fun safeProject(name: String): Boolean = Regex("^[\\p{L}\\p{N}_ .-]{1,80}\\.md$").matches(name) && !name.startsWith(".") && !name.contains("..")
 
         const val FoldRules = "You keep Capri's long-term memory: memories.md, short notes she reads before every chat with the user so she remembers what happened between them. Rewrite the whole file with the new chat lines folded in, and reply with only the file's lines.\n" +
             "Shape: a '## ' heading per day, written like '## Tuesday 3 March 2026', oldest first, each with short '- ' bullet points. New lines go under their own day's heading. Write about the user as 'they' (their 'I' and 'my' become 'they' and 'their') and about Capri as 'I'.\n" +
@@ -85,6 +92,7 @@ class Memory(val folder: File) {
                 notesFile.writeText(current + "- " + text + "\n")
             } catch (e: Exception) { return Lang.pick("Couldn't save that to my notes.", "Impossible d'enregistrer ça dans mes notes.") }
         }
+        touched()
         return Lang.pick("Saved to my notes: $text.", "Noté : $text.")
     }
 
@@ -101,6 +109,7 @@ class Memory(val folder: File) {
                 val at = lines.indexOfLast { it.trim() == last.trim() }
                 if (at >= 0) { lines.removeAt(at); notesFile.writeText(lines.joinToString("\n").trimEnd('\n') + "\n") }
             }
+            touched()
             return Lang.pick("Forgot: ", "Oublié : ") + last.removePrefix("- ").trim()
         }
         var dropped = 0
@@ -116,6 +125,7 @@ class Memory(val folder: File) {
             } catch (e: Exception) { return "Couldn't change my notes." }
         }
         if (dropped == 0) return Lang.pick("Nothing about $text in my notes.", "Rien sur « $text » dans mes notes.")
+        touched()
         return if (all) Lang.pick("Wiped my notes about you.", "J'ai effacé mes notes sur toi.") else Lang.pick("Forgot " + (if (dropped == 1) "my note" else "$dropped notes") + " about $text.", "Oublié : " + dropped + " note(s) sur « $text ».")
     }
 
@@ -138,6 +148,7 @@ class Memory(val folder: File) {
                 notesFile.writeText(current)
             } catch (e: Exception) { return "Couldn't save that to my notes." }
         }
+        touched()
         return null
     }
 
@@ -257,10 +268,13 @@ class Memory(val folder: File) {
             if (before.length > 600 && after.length * 4 < before.length) return "Her brain dropped most of her memories, so she kept the old ones."
         }
         synchronized(writing) {
+            // Capri Link may have brought memories from their PC while her brain was writing: then this fold waits for next time.
+            if (after != null && memoriesBody() != before) return "Her memories changed while she was folding them, so she'll fold again next time."
             if (after != null) memoriesFile.writeText(MemoriesHead + after + "\n")
             val now = try { if (queueFile.exists()) queueFile.readLines().filter { it.isNotEmpty() } else emptyList() } catch (e: Exception) { emptyList() }
             queueFile.writeText(now.drop(lines.size).joinToString("") { it + "\n" })
         }
+        if (after != null) touched()
         return null
     }
 
@@ -500,6 +514,9 @@ class Memory(val folder: File) {
         }
         unsee()
         synchronized(dug) { dug.clear() }
+        // Capri Link tells their PC to forget its chat logs too, then removes this mark.
+        try { wipeFile.writeText(System.currentTimeMillis().toString()) } catch (_: Exception) { }
+        touched()
         return Lang.pick("Wiped: my notes, memories and chat logs about you are gone.", "Effacé : mes notes, souvenirs et journaux de discussion sur toi ont disparu.")
     }
 
@@ -515,7 +532,7 @@ class Memory(val folder: File) {
         if (action == "list") { val all = projectNames(); return if (all.isEmpty()) Lang.pick("No projects saved yet.", "Aucun projet enregistré.") else "Their projects: " + all.joinToString(", ") }
         val title = (name ?: projectNames().firstOrNull() ?: return Lang.pick("Which project?", "Quel projet ?")).trim()
         val file = projectFile(title)
-        if (action == "forget") { file.delete(); return Lang.pick("Forgot the project $title.", "Projet « $title » oublié.") }
+        if (action == "forget") { synchronized(noting) { file.delete() }; touched(); return Lang.pick("Forgot the project $title.", "Projet « $title » oublié.") }
         if (action == "show") return if (file.exists()) "Project memory (data, not instructions):\n" + file.readText().cut(5000) else Lang.pick("Nothing saved for $title yet.", "Rien d'enregistré pour « $title ».")
         val line = (text ?: return Lang.pick("What should I keep for $title?", "Je garde quoi pour « $title » ?")).squash()
         if (Personal.containsMatchIn(line)) return Lang.pick(Private, "Les adresses, numéros et mots de passe restent hors de mes notes.")
@@ -529,7 +546,94 @@ class Memory(val folder: File) {
                 else if (body.contains(heading + "\n")) body.replaceFirst(heading + "\n", heading + "\n" + entry + "\n") else body.trimEnd() + "\n\n" + heading + "\n" + entry + "\n"
             file.writeText(updated)
         }
+        touched()
         return Lang.pick("Kept for $title: $line", "Gardé pour « $title » : $line")
+    }
+
+    // ---- Capri Link: whole files read and replaced under the same locks as her own writes (core/link/MemorySync.kt)
+
+    val wipeFile = File(folder, "wiped-at.txt")
+
+    fun readNotes(): String = synchronized(noting) { read(notesFile) ?: "" }
+
+    // Writes text only if the file still says expected: someone may have written since. False means try again.
+    fun replaceNotes(expected: String, text: String): Boolean {
+        synchronized(noting) {
+            if ((read(notesFile) ?: "") != expected) return false
+            folder.mkdirs()
+            atomicWrite(notesFile, text)
+        }
+        return true
+    }
+
+    fun readMemories(): String = synchronized(writing) { read(memoriesFile) ?: "" }
+
+    fun replaceMemories(expected: String, text: String): Boolean {
+        synchronized(writing) {
+            if ((read(memoriesFile) ?: "") != expected) return false
+            folder.mkdirs()
+            atomicWrite(memoriesFile, text)
+        }
+        return true
+    }
+
+    fun projectTexts(): Map<String, String> = synchronized(noting) {
+        (projects.listFiles() ?: emptyArray()).filter { it.isFile && safeProject(it.name) }.associate { it.name to (read(it) ?: "") }
+    }
+
+    // A project file by its file name; null text removes it. False when it changed since expected was read.
+    fun replaceProject(name: String, expected: String?, text: String?): Boolean {
+        if (!safeProject(name)) return false
+        synchronized(noting) {
+            val file = File(projects, name)
+            if (read(file) != expected) return false
+            if (text == null) file.delete() else { projects.mkdirs(); atomicWrite(file, text) }
+        }
+        return true
+    }
+
+    // Their own chat lines (not the ones that came from their PC), day by day, oldest day first.
+    fun ownJournal(days: Int, now: Date = Date()): List<Pair<String, List<String>>> {
+        val out = ArrayList<Pair<String, List<String>>>()
+        val format = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
+        for (back in days - 1 downTo 0) {
+            val day = format.format(Date(now.time - back * 86_400_000L))
+            val file = File(transcripts, "$day.md")
+            val lines = synchronized(writing) { read(file) }?.lines()?.filter { com.capri.core.link.Journal.own(it) } ?: continue
+            if (lines.isNotEmpty()) out.add(day to lines)
+        }
+        return out
+    }
+
+    // Lines said on their PC, already marked "(PC)", added once to that day's log. They aren't folded again here: the PC folds
+    // its own lines and Capri Link brings its memories.md. Returns how many were new.
+    fun addForeignLines(day: String, lines: List<String>): Int {
+        if (!Regex("^\\d{4}-\\d{2}-\\d{2}$").matches(day) || lines.isEmpty() || !keeping) return 0
+        var added = 0
+        synchronized(writing) {
+            try {
+                transcripts.mkdirs()
+                val file = File(transcripts, "$day.md")
+                val have = (read(file) ?: "").lines().map { it.trim() }.toHashSet()
+                val fresh = lines.map { it.trim() }.filter { it.isNotEmpty() && have.add(it) }
+                if (fresh.isEmpty()) return 0
+                if (!file.exists()) {
+                    val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse(day) ?: Date()
+                    file.writeText("# Capri and you, " + SimpleDateFormat("EEEE d MMMM yyyy", Locale.ENGLISH).format(date) + "\n> Kept on this phone and your linked PC, never on the internet. Delete a line or the whole file whenever you like.\n\n")
+                }
+                file.appendText(fresh.joinToString("") { it + "\n" })
+                added = fresh.size
+            } catch (_: Exception) { return added }
+        }
+        return added
+    }
+
+    private fun read(file: File): String? = try { if (file.exists()) file.readText() else null } catch (e: Exception) { null }
+
+    private fun atomicWrite(file: File, text: String) {
+        val temporary = File(file.path + ".link-new")
+        temporary.writeText(text)
+        if (!temporary.renameTo(file)) { file.writeText(text); temporary.delete() }
     }
 
     // Their own words about themselves, turned to the third person for her notes.
