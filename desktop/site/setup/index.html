@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Set up Capri on your desktop: install, her brain, her voice.">
+  <title>Set up Capri</title>
+  <link rel="icon" type="image/x-icon" href="../assets/chip.ico">
+  <link rel="stylesheet" href="../style.css?v=0.8.2">
+  <script src="../guide.js" defer></script>
+  <script src="../helper.js?v=0.8.2" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <a href="../" aria-label="Capri home"><img class="chip" src="../assets/chip.png" alt="Capri's chip" width="72" height="50"></a>
+      <div class="links">
+        <a class="guide-link" href="../help/">Help</a>
+        <a class="download" href="https://github.com/lachydotmcg/capri-desktop/releases/download/v0.8.2/Capri-Setup.exe" data-api="https://capri-reactions.lachydotmcg.workers.dev/download"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 13v4h14v-4"/></svg><span>Download</span></a>
+        <a class="discord" href="https://discord.gg/F4fDHfGtFk" target="_blank" rel="noopener noreferrer" aria-label="Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="discord-mark" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></a>
+        <a class="github" href="https://github.com/lachydotmcg/capri-desktop" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .75a11.25 11.25 0 0 0-3.56 21.92c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.62 1.22 3.26.93.1-.73.39-1.22.71-1.5-2.5-.29-5.13-1.25-5.13-5.57 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.15a10.83 10.83 0 0 1 5.64 0c2.15-1.45 3.1-1.15 3.1-1.15.61 1.55.23 2.7.11 2.98.72.79 1.16 1.79 1.16 3.02 0 4.33-2.64 5.28-5.15 5.56.4.35.76 1.03.76 2.08v3.11c0 .3.2.65.78.54A11.25 11.25 0 0 0 12 .75Z"/></svg></a>
+      </div>
+    </header>
+    <main class="guide">
+      <h1>Set up <em>Capri</em></h1>
+      <nav class="guide-jump" aria-label="Steps"><a href="#install">1 Install</a><a href="#brain">2 Brain</a><a href="#voice">3 Voice</a><a href="#talk">4 Talk</a><a href="#stuck">Stuck?</a><a href="../help/">Help</a></nav>
+
+      <section id="install" class="step">
+        <h2><span class="step-number">1</span>Install <small>Windows only</small></h2>
+        <ol class="moves">
+          <li><a class="download inline" href="https://github.com/lachydotmcg/capri-desktop/releases/download/v0.8.2/Capri-Setup.exe" data-api="https://capri-reactions.lachydotmcg.workers.dev/download"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v10m-4-4 4 4 4-4M3 13v4h14v-4"/></svg><span>Download</span></a></li>
+          <li>Open <code>Capri-Setup.exe</code></li>
+          <li>“Windows protected your PC”? <b>More info</b> → <b>Run anyway</b></li>
+          <li><b>Install</b></li>
+        </ol>
+        <p class="note">Windows warns because Capri is new and not signed yet. The code is open on <a href="https://github.com/lachydotmcg/capri-desktop" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+      </section>
+
+      <section id="brain" class="step">
+        <h2><span class="step-number">2</span>Her brain <small>free, runs on your PC</small></h2>
+        <ol class="moves">
+          <li>The <b>Capri Mainframe</b> opens by itself</li>
+          <li>Keep <b>NORMAL</b> picked: Start with this!</li>
+          <li><b>Set up her brain</b></li>
+          <li>Wait for the download. She says hi when it's done</li>
+        </ol>
+        <p class="note">Already use Ollama? Open it, then press <b>Refresh</b>.</p>
+        <img class="shot" src="../assets/guide-brain.png" alt="Capri Mainframe with the Set up her brain button, three brain rows and the Free key button" width="380" height="385" loading="lazy">
+
+        <h3 id="free-key">Slow PC, or the download fails?</h3>
+        <dl class="keys">
+          <dt>Free brain</dt><dd><b>MEDIUM INTELLIGENCE</b>: NVIDIA, Google AI Studio (Gemini) or OpenRouter key. Nothing to download, needs internet</dd>
+          <dt>OpenRouter</dt><dd>MEDIUM INTELLIGENCE: <code>:free</code> models only</dd>
+          <dt>Warning</dt><dd>Free keys can be rate limited and slow.</dd>
+          <dt>Free key</dt><dd>opens NVIDIA by default. NVIDIA's steps:</dd>
+        </dl>
+        <ol class="moves">
+          <li>Mainframe → <b>MEDIUM INTELLIGENCE</b> → <b>Free key</b>, or open <a href="https://build.nvidia.com/settings/api-keys" target="_blank" rel="noopener noreferrer">build.nvidia.com</a></li>
+          <li>Sign in or make a free account. NVIDIA may ask to verify your phone</li>
+          <li><b>Generate API Key</b>, then copy it. It starts with nvapi-</li>
+          <li>Paste your key in the box under <b>MEDIUM INTELLIGENCE</b> → <b>Connect</b></li>
+        </ol>
+        <dl class="keys">
+          <dt>NVIDIA</dt><dd>NVIDIA's free API is often slow, especially at busy times.</dd>
+          <dt>Screen</dt><dd>most NVIDIA models can't see your screen. Her first pick can</dd>
+          <dt>All models</dt><dd><b>MAX INTELLIGENCE</b>: Gemini, OpenRouter, NVIDIA, OpenAI, Claude or DeepSeek key; includes paid models</dd>
+          <dt>Move to MAX</dt><dd>OpenAI, Claude or DeepSeek key under MEDIUM INTELLIGENCE? <b>Move to MAX</b> connects it there</dd>
+          <dt>Used HIGHER?</dt><dd>now <b>MEDIUM INTELLIGENCE</b>. Your key and model are kept</dd>
+        </dl>
+      </section>
+
+      <section id="voice" class="step">
+        <h2><span class="step-number">3</span>Her voice <small>free, Fish Audio or ElevenLabs</small></h2>
+        <p class="note">Our project-provided synthetic voice is in Capri's Mainframe and runs on your PC. You may connect third-party text-to-speech services, but we don't provide guides for voice cloning tools. Our only voice-design help is a text prompt for making a synthetic voice.</p>
+        <p class="note">Only use voices you have the necessary rights and permissions to use, and follow the provider's terms. We do not endorse unauthorized cloning or impersonation of voice actors or other individuals. Capri prohibits cloning or impersonating a living person's voice without explicit, informed consent or other valid authorization.</p>
+        <p class="note">Skip this and she talks with her free voice, which the installer sets up. Fish Audio has a free tier. ElevenLabs uses your credits. OpenAI or your own voice model: <a href="../help/#voice">Help → Her voice</a>.</p>
+
+        <h3 id="fish">Fish Audio <small>free tier</small></h3>
+        <ol class="moves">
+          <li>Sign up at <a href="https://fish.audio" target="_blank" rel="noopener noreferrer">fish.audio</a></li>
+          <li><a href="https://fish.audio/app/api-keys" target="_blank" rel="noopener noreferrer">API Keys</a> → <b>Create New Key</b>, then copy it</li>
+          <li>Mainframe, under VOICE: <b>CLOUD VOICE</b> → <b>Fish Audio</b>. Its panel opens</li>
+          <li>Paste the key under <b>Key</b></li>
+          <li>Voice: make your own with Fish Audio's <b>Voice Design</b>, then paste its link. Capri prohibits cloning or impersonating a living person's voice without explicit, informed consent or other valid authorization</li>
+          <li><b>Test</b>, then <b>Use this server</b></li>
+        </ol>
+
+        <h3>Or ElevenLabs <small>uses your credits</small></h3>
+        <ol class="moves">
+          <li>Sign up at <a href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">elevenlabs.io</a></li>
+        </ol>
+
+        <h3>Design her voice</h3>
+        <ol class="moves">
+          <li><b>ElevenCreative</b> → <b>Voice Creation</b> → <b>Voice Design</b> → <b>Create new</b>
+            <img class="fit" src="../assets/guide-el-voice-design.png" alt="The ElevenLabs Voice Design card with its Create new button" width="537" height="461" loading="lazy">
+          </li>
+          <li>Paste this prompt, then create the voice
+            <div class="prompt"><p id="voice-prompt">Her voice is light, bright, and buoyant, with a playful lilt that rises at phrase endings, as if sharing a secret joke. Quick, bouncy pacing shifts between mock-innocent sweetness and a sly, knowing edge. She sounds close and airy, whispering directly inside the listener’s mind. Her voice has a vivid holographic quality: crystalline synthetic resonance layered beneath her femininity, as though projected through shimmering digital light. A faint electronic halo surrounds each syllable, with metallic overtones, spectral echoes, and flickers of static rippling through her voice like glitches in a translucent projection. When her mischief sharpens, her voice briefly fractures into digital artifacts, subtle pitch warps, and sparkling distortions. Beneath the playful act, her tone occasionally softens into something fragile and haunting, hinting at the Project Capricorn past she cannot escape. She feels enchanting, mischievous, and unmistakably nonhuman.</p><button class="copy" type="button" data-copy="voice-prompt">Copy</button></div>
+          </li>
+          <li><b>Voices</b> → <b>My Voices</b> → <b>⋯</b> → <b>Copy Voice ID</b>
+            <img class="fit" src="../assets/guide-el-voices.png" alt="The ElevenLabs sidebar with Voices circled" width="237" height="273" loading="lazy">
+            <img class="fit" src="../assets/guide-el-my-voices.png" alt="The Voices page with the My Voices tab circled" width="532" height="120" loading="lazy">
+          </li>
+        </ol>
+        <h3>API key</h3>
+        <ol class="moves">
+          <li>Bottom left: <b>Developers</b>
+            <img class="fit" src="../assets/guide-el-developers.png" alt="The bottom of the ElevenLabs sidebar with Developers circled" width="300" height="402" loading="lazy">
+          </li>
+          <li><b>API Keys</b> → <b>Create Key</b>, name it Capri
+            <img class="fit" src="../assets/guide-el-api-keys.png" alt="The Developers page with the API Keys tab circled" width="714" height="150" loading="lazy">
+          </li>
+          <li>Turn <b>Restrict key</b> off</li>
+          <li><b>Create Key</b>, then copy it before you close the popup</li>
+        </ol>
+
+        <h3>In the Mainframe</h3>
+        <ol class="moves">
+          <li>Under VOICE: <b>CLOUD VOICE</b>, then <b>ElevenLabs</b> in the menu under it. Close Fish Audio's panel if it opens. Before 0.7.6: <b>ELEVENLABS</b></li>
+          <li>Paste the key → <b>Connect</b>
+            <img class="fit" src="../assets/guide-mainframe-key.png" alt="The Mainframe VOICE section with CLOUD VOICE picked, ElevenLabs in its menu and the key box circled" width="366" height="170" loading="lazy">
+          </li>
+          <li>Clear the Voice ID box, then paste your Voice ID
+            <img class="fit" src="../assets/guide-mainframe-voice-id.png" alt="The Mainframe VOICE section with the Voice ID box circled and the v4 model picked" width="366" height="107" loading="lazy">
+          </li>
+          <li>Model menu → <b>v4</b></li>
+          <li><b>Test</b></li>
+        </ol>
+      </section>
+
+      <section id="talk" class="step">
+        <h2><span class="step-number">4</span>Talk to her</h2>
+        <dl class="keys">
+          <dt>Pencil</dt><dd>type to her</dd>
+          <dt>"Open Spotify"</dt><dd>she opens apps, games and sites, and skips songs</dd>
+          <dt>"Play Blinding Lights"</dt><dd>she plays it on Spotify, or YouTube without it</dd>
+          <dt>"Close Discord"</dt><dd>she switches to, minimizes or closes open apps and tabs</dd>
+          <dt>Watch my screen</dt><dd>Mainframe → Settings: she comments as you play</dd>
+          <dt>PREBUILT LOCAL</dt><dd>in the Mainframe: her free voice, runs on your PC, no credits</dd>
+          <dt>CUSTOM LOCAL</dt><dd>in the Mainframe: a voice model you run on your PC</dd>
+          <dt>CLOUD VOICE</dt><dd>in the Mainframe: Fish Audio (free tier), ElevenLabs (uses your credits) or OpenAI</dd>
+          <dt>OFF</dt><dd>in the Mainframe under VOICE: no voice, she types</dd>
+          <dt>Wave</dt><dd>voice chat, free unless ElevenLabs is picked</dd>
+          <dt>Mic button</dt><dd>mute your mic while chatting</dd>
+          <dt>Ctrl + Alt + V</dt><dd>start or stop voice chat</dd>
+          <dt>Ctrl + Alt + N</dt><dd>mute your mic while chatting</dd>
+          <dt>Drag</dt><dd>sit her on a window</dd>
+          <dt>Shift + drop</dt><dd>sit her right there</dd>
+          <dt>Ctrl + drop</dt><dd>she hangs on right there, click her to let go</dd>
+          <dt>Wander around</dt><dd>right-click her, Move: she hops between your open windows</dd>
+          <dt>Ctrl + Alt + C</dt><dd>get her off your cursor</dd>
+          <dt>Tray icon</dt><dd>menu, Mainframe, quit</dd>
+        </dl>
+      </section>
+
+      <section id="stuck" class="step">
+        <h2>Stuck?</h2>
+        <dl class="stuck">
+          <dt>“ElevenLabs rejected the key”</dt><dd>That isn't the key. Keys start with <code>sk_</code>. Make a new one and paste it.</dd>
+          <dt>“Key is missing permissions”</dt><dd>Make a new key with <b>Restrict key</b> turned off.</dd>
+          <dt>“Voice not found”</dt><dd>Paste the Voice ID of the voice you designed, from My Voices, not its name.</dd>
+          <dt>“Out of ElevenLabs credits”</dt><dd>Credits refill each month. She uses about one per letter she says.</dd>
+          <dt>“Free tier usage disabled”</dt><dd>Turn off your VPN and try again.</dd>
+          <dt>She can't hear you</dt><dd>Pick your mic in the Mainframe. Still nothing? Windows Settings → Privacy &amp; security → Microphone → let desktop apps use it.</dd>
+          <dt>“Item Not Found” when you open the installer</dt><dd>Your browser or antivirus held it back. In Chrome or Edge, press <b>Ctrl + J</b> and pick <b>Keep</b>. Antivirus? Restore it from quarantine. Then open it from your Downloads folder.</dd>
+          <dt>Antivirus flags it</dt><dd>A false alarm on a new, unsigned app. Check the code on <a href="https://github.com/lachydotmcg/capri-desktop" target="_blank" rel="noopener noreferrer">GitHub</a>.</dd>
+          <dt>Still stuck?</dt><dd>Check the <a href="../help/">Help page</a>, or ask in the Discord.</dd>
+        </dl>
+        <a class="discord-join" href="https://discord.gg/F4fDHfGtFk" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#discord-mark"/></svg>Join the Discord</a>
+      </section>
+
+      <p class="credit">Guide by @Dancer, screenshots by @BaldDcModWithSmalD, both from the Discord. Thank you!</p>
+      <footer id="support" class="support"><p class="support-head">Support Capri on Ko-fi</p><p class="support-links"><a href="https://ko-fi.com/lachysdev" target="_blank" rel="noopener noreferrer"><img src="../assets/kofi/lachysdev.webp" alt="" width="24" height="24" loading="lazy" onerror="this.remove()"><b>Lachy</b><small>developer</small></a><a href="https://ko-fi.com/xorulance" target="_blank" rel="noopener noreferrer"><img src="../assets/kofi/xorulance.webp" alt="" width="24" height="24" loading="lazy" onerror="this.remove()"><b>Lance and xoru</b><small>managers</small></a><a href="https://ko-fi.com/balddcmod" target="_blank" rel="noopener noreferrer"><img src="../assets/kofi/balddcmod.webp" alt="" width="24" height="24" loading="lazy" onerror="this.remove()"><b>BaldDcMod</b><small>Discord moderator</small></a></p><p class="fan-notice">Capri is an unofficial fan project and is not approved or endorsed by CD PROJEKT RED, the anime's rights holders or its voice actors.</p></footer>
+    </main>
+  </div>
+</body>
+</html>

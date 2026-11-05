@@ -1,0 +1,16 @@
+{
+  "name": "capri-reactions",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-19",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "ai": { "binding": "AI" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "capri-reactions",
+      "database_id": "4d6d1340-9a36-45ab-aee8-3e8f0013aa01",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

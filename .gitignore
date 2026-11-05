@@ -1,0 +1,18 @@
+# Desktop
+desktop/out/
+desktop/worker/node_modules/
+# Android
+android/.gradle/
+android/build/
+android/*/build/
+android/local.properties
+android/.idea/
+*.iml
+# Clés et secrets : ne jamais les mettre dans Git
+*.jks
+*.keystore
+keystore.properties
+manifest-signing-key.*
+# Divers
+.DS_Store
+Thumbs.db

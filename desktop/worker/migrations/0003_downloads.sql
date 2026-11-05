@@ -1,0 +1,2 @@
+CREATE TABLE downloads (id INTEGER PRIMARY KEY CHECK (id = 1), count INTEGER NOT NULL DEFAULT 0);
+INSERT INTO downloads (id) VALUES (1);
