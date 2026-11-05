@@ -1972,6 +1972,8 @@ namespace CapriDesktop
             Brain.Digging = !smoke;
             if (!smoke) Brain.Keeper = brain;
             if (!smoke) brain.Load(Path.Combine(data, "chat.json"));
+            // Capri Link: the same Capri, with the same memory, on this PC and their phone. Nothing listens until a phone is paired.
+            if (!smoke) StartCapriLink(data);
             Voice.Loudness = Math.Max(0, Math.Min(150, preferences.Volume));
             VoiceFx.Pitch = Math.Max(-VoiceFx.MostPitch, Math.Min(VoiceFx.MostPitch, preferences.VoicePitch));
             VoiceFx.Speed = Math.Max(VoiceFx.Slowest, Math.Min(VoiceFx.Fastest, preferences.VoiceSpeed));
@@ -2066,6 +2068,7 @@ namespace CapriDesktop
             checkItem = new ToolStripMenuItem("Check for updates", null, delegate { CheckForUpdates(true); });
             helpItem.DropDownItems.Add(checkItem);
             updateItem = new ToolStripMenuItem("Restart to update", null, delegate { InstallUpdate(); });
+            menu.Items.Add(new ToolStripMenuItem("Capri Link…", null, delegate { OpenCapriLink(); }));
             menu.Items.Add(helpItem);
             foreach (ToolStripMenuItem parent in new[] { sizes, moves, helpItem })
             {
@@ -12464,6 +12467,7 @@ namespace CapriDesktop
             StopMicTest(false);
             EndWatchAlong();
             followUp.Drop();
+            StopCapriLink();
             Hands.Finder.Stop();
             clips.Dispose();
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplaysChanged;
@@ -38824,6 +38828,7 @@ namespace CapriDesktop
                             ListenCapriChecks(output, checks);
                             VoiceSwitchChecks(output, checks);
                             GamingChecks(output, checks);
+                            Link.Checks(output, checks);
                             checks.Add("LIMIT handler-driven integration test; physical mouse input and tray UI require a manual check");
                             checks.Add("PASS quit menu requested application exit");
                             File.WriteAllLines(Path.Combine(output, "smoke-test.txt"), checks);
