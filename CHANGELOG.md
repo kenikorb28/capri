@@ -7,6 +7,7 @@
 - **Version unique 2.0.0** pour les deux (`VERSION`, `desktop/app/AssemblyInfo.cs`, `desktop/cross/Capri.Cross.csproj`, `android/app/build.gradle.kts` avec versionCode 20000).
 - Branches `stable` (originaux intacts, tags `desktop-0.8.2-origine` et `android-2.0-origine`), `development`, `android`, `feature/capri-link`.
 - Workflows GitHub **déplacés à la racine** (`.github/workflows/`). Raison technique : GitHub n'exécute que les workflows à la racine d'un dépôt, ceux de `desktop/.github` et `android/.github` ne tournaient plus. *Capri Desktop* (Windows, Linux ; Mac seulement si tu coches *Aussi le test Mac* en le lançant à la main, pour économiser les minutes), *Capri Desktop Mac and Linux* (branche `mac-linux`), *Capri Android* (tests, APK debug, APK release signé si ta clé est dans les secrets ; téléchargements de Gradle gardés d'une fois sur l'autre).
+- *Capri Android* : `android-actions/setup-android@v4` avec seulement `platform-tools`. Raison technique : depuis mi-septembre 2026, les machines de GitHub ne connaissent plus l'ancien paquet `tools` que la v3 demande par défaut, et le workflow échouait en quelques secondes avant même de compiler.
 - Premier lancement des workflows : sur un dépôt tout neuf, le premier push ne les démarre pas toujours (*No workflows found*) ; le push suivant qui touche leurs fichiers les lance (docs/OUTILS.md, section 4).
 - Docs : audit et plan [docs/AUDIT-ECOSYSTEME.md](docs/AUDIT-ECOSYSTEME.md), outils [docs/OUTILS.md](docs/OUTILS.md), guide [docs/CAPRI-LINK.md](docs/CAPRI-LINK.md).
 

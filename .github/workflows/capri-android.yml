@@ -33,7 +33,12 @@ jobs:
           distribution: temurin
           java-version: "17"
           cache: gradle
-      - uses: android-actions/setup-android@v3
+      # Since mid-September 2026 GitHub's runner images carry an sdkmanager that no longer knows the old "tools" package,
+      # which setup-android v3 asks for by default (it failed in seconds, before Gradle ran). v4, with only what Gradle
+      # needs: AGP fetches the platform and build tools itself.
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
       - name: Test and build the debug APK
         run: |
           chmod +x gradlew
