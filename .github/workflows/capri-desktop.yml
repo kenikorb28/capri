@@ -32,15 +32,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       # GitHub's Windows machine starts at 1024 x 768, and Windows Forms keeps a window within about 1044 px there, smaller
-      # than her windows at 150% and 200% (Settings, SECURITY, VOICE LAYERS...). Lachy's ci/wide-screen.ps1 asks Windows for
+      # than her windows at 150% and 200% (Settings, SECURITY, VOICE LAYERS...). ci/wide-screen.ps1 asks Windows for
       # 1920 x 1080, writes what it got and never stops the run: her test decides whether the screen was big enough.
-      - name: A 1080p screen for her windows at 150% and 200%
-        shell: pwsh
+      # Same step as Lachy's own workflow since 0.8.4.
+      - name: Full size screen
+        shell: powershell
         timeout-minutes: 3
         run: ./ci/wide-screen.ps1
       - name: Build and smoke test
         shell: pwsh
         run: ./ci/build-windows.ps1 -OutputDirectory out/windows -SmokeTest -SmokeSeconds 900
+      - name: Package marker
+        if: always()
+        shell: pwsh
+        run: |
+          $env:CAPRI_DISPOSABLE_USER = '1'
+          ./ci/test-package-marker.ps1 -Setup out/windows/Capri-Setup.exe
       - uses: actions/upload-artifact@v4
         with:
           name: capri-desktop-windows
@@ -52,6 +59,25 @@ jobs:
         with:
           name: smoke-windows
           path: desktop/out/windows/smoke
+
+  # Her silent install and uninstall change the runner's own Capri, so they get a fresh runner of their own (Lachy's, 0.8.4).
+  windows-setup:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        shell: pwsh
+        run: ./ci/build-windows.ps1 -OutputDirectory out/windows
+      - name: Silent install and uninstall
+        shell: pwsh
+        run: |
+          $env:CAPRI_DISPOSABLE_USER = '1'
+          ./ci/test-silent-install.ps1 -Setup out/windows/Capri-Setup.exe
+          ./ci/test-silent-uninstall.ps1 -Setup out/windows/Capri-Setup.exe
 
   linux:
     runs-on: ubuntu-24.04

@@ -3,7 +3,7 @@
 ## 2.0.0 — en cours sur `development` (6 novembre 2026)
 
 ### Écosystème
-- Un seul dépôt pour **Capri Desktop** (`desktop/`, depuis la 0.8.2) et **Capri Android** (`android/`, depuis la 2.0), avec le contrat commun (`contract/`), la doc (`docs/`) et les outils (`tools/`).
+- Un seul dépôt pour **Capri Desktop** (`desktop/`, depuis la 0.8.2, aujourd'hui basé sur la **0.8.4** de Lachy) et **Capri Android** (`android/`, depuis la 2.0), avec le contrat commun (`contract/`), la doc (`docs/`) et les outils (`tools/`).
 - **Version unique 2.0.0** pour les deux (`VERSION`, `desktop/app/AssemblyInfo.cs`, `desktop/cross/Capri.Cross.csproj`, `android/app/build.gradle.kts` avec versionCode 20000).
 - Branches `stable` (originaux intacts, tags `desktop-0.8.2-origine` et `android-2.0-origine`), `development`, `android`, `feature/capri-link`.
 - Workflows GitHub **déplacés à la racine** (`.github/workflows/`). Raison technique : GitHub n'exécute que les workflows à la racine d'un dépôt, ceux de `desktop/.github` et `android/.github` ne tournaient plus. *Capri Desktop* (Windows, Linux ; Mac seulement si tu coches *Aussi le test Mac* en le lançant à la main, pour économiser les minutes), *Capri Desktop Mac and Linux* (branche `mac-linux`), *Capri Android* (tests, APK debug, APK release signé si ta clé est dans les secrets ; téléchargements de Gradle gardés d'une fois sur l'autre).
@@ -18,6 +18,7 @@
 - Contrat et vecteur de test commun : `contract/link-v2.md`, `contract/memory-v2.md`, `contract/vectors/link-v2-crypto.json`.
 
 ### Capri Desktop
+- **Basé sur la 0.8.4 de Lachy** au lieu de la 0.8.2. Ton PC avait déjà la 0.8.4, arrivée par sa mise à jour automatique le 5 novembre ; installer une 2.0 tirée de la 0.8.2 t'aurait retiré ce que les 0.8.3 et 0.8.4 ont apporté (couleurs du Mainframe, mods et skill mods, mode Husk, erreurs plus claires, fenêtres qui tiennent dans leur écran, corrections). Ses 240 commits sont fusionnés à trois voies : `Capri.cs` et `Mainframe.cs` sans conflit. Là où Lachy avait corrigé la même chose que moi, sa version est gardée : `Mainframe.PageClamped` remplace mon `CutByScreen` (même calcul), et sa garde dans `Brain.Fold` refuse d'écrire `memories.md` s'il a changé pendant le résumé, ce qui couvre aussi Capri Link. Ses ajouts aux workflows sont repris. Le port Meta Quest (`quest/`) et 8,6 Mo d'images du README sont laissés de côté. Détails et méthode pour la version suivante : [docs/BASE-DESKTOP.md](docs/BASE-DESKTOP.md).
 - `app/Link.cs` : le serveur Capri Link, la fenêtre **Capri Link…** (téléphones, code, fichiers, journal), clés protégées par DPAPI, sauvegarde du jour avant chaque modification, vérifications dans le test automatique (vecteur + vrai appairage et vraie synchro en local).
 - `Brain.cs` : verrous partagés avec Capri Link, ce que tu faisais sur le téléphone (et tes projets) dans son prompt, `memories.md` jamais réécrit s'il a changé pendant qu'elle le résumait, heure de la dernière ligne.
 - `Capri.cs` : Capri Link démarre si un téléphone est appairé, menu *Capri Link…*, arrêt propre. Le test du menu court du clic droit attend maintenant cette ligne entre *Hologram* et *Help*.

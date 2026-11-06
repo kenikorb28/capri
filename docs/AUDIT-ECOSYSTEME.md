@@ -1,5 +1,7 @@
 # Capri Ecosystem — Audit et plan de migration
 
+> **Mise à jour du 6 novembre 2026.** Cet audit décrit les archives d'origine. Depuis, Capri Desktop est basé sur la **0.8.4** de Lachy ([BASE-DESKTOP.md](BASE-DESKTOP.md)), qui apporte déjà un **mode Husk** (`desktop/app/Husk.cs`) et des **mods**, dont des *skill mods* (`desktop/app/SkillMods.cs`, `desktop/mods/`). La phase P10 (Code/Husk Mode, Skills, plugins) partira de là au lieu de tout créer.
+
 5 novembre 2026
 
 ## En bref

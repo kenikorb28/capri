@@ -11,6 +11,8 @@ namespace CapriDesktop
     internal static class GameNotes
     {
         internal static string Folder;
+        // The skill mods that are on for a game, from her mods list. Null tells her none.
+        internal static Func<string, string> Skills;
         // The newest notes go in the prompt once a file outgrows it. The file itself keeps everything.
         private const int MostTold = 4000;
         private static readonly object writing = new object();
@@ -49,20 +51,76 @@ namespace CapriDesktop
             "Write up to 3 short lines, each starting with \"- \", about the game itself that you'd want to know next time: a control you worked out, how long something takes, what worked in it, what didn't and why, what killed you, or where something is. " +
             "Only write what you actually found out from these moves, in plain words. Nothing about the user or their stream, nothing about your tools or your own replies, and nothing that only matters to this one run. If you learned nothing new about the game, reply with only the word: nothing";
 
-        // "Minecraft 26.3 - Singleplayer" is Minecraft, and "Cyberpunk 2077 (C) 2020 by CD Projekt RED" is Cyberpunk 2077.
-        internal static string Name(string title)
-        {
-            string name = Regex.Replace(title ?? "", @"[®™©*]", " ");
-            name = Regex.Replace(name, @"\s+[-–—|:(\[].*$", "");
-            name = Regex.Replace(name, @"\s+v?\d+(\.\d+)+.*$", "", RegexOptions.IgnoreCase);
-            return Regex.Replace(name, @"\s+", " ").Trim(' ', '.');
-        }
+        // Mac and Linux name games the same way for their skills, so the trimming lives with the mods.
+        internal static string Name(string title) { return Mods.GameName(title); }
 
         private static string Place(string game)
         {
             if (Folder == null || string.IsNullOrEmpty(game)) return null;
             string file = Regex.Replace(game.ToLowerInvariant(), @"[^\p{L}\p{N}]+", "-").Trim('-');
             return file.Length == 0 ? null : Path.Combine(Folder, file + ".md");
+        }
+
+        internal static WrittenNote OpenControls(string game)
+        {
+            string named = Name(game), path = Place(named);
+            if (path == null) throw new IOException("Enter the game's name first.");
+            return new WrittenNote(Path.ChangeExtension(path, "controls.md"), "# Controls for " + named + "\n\n", writing);
+        }
+
+        internal static string Controls(string game)
+        {
+            string path = Place(Name(game));
+            if (path == null) return "";
+            lock (writing)
+            {
+                path = Path.ChangeExtension(path, "controls.md");
+                return File.Exists(path) ? File.ReadAllText(path).Trim() : "";
+            }
+        }
+
+        internal static string Do(ToolArguments args)
+        {
+            string game = Name(string.IsNullOrWhiteSpace(args.Name) ? Hands.GameOpen() : args.Name);
+            if (game.Length == 0) return "Which game are these controls for?";
+            try
+            {
+                lock (writing)
+                {
+                    if (args.Action == "read")
+                    {
+                        string controls = Controls(game);
+                        return controls.Length == 0 ? "No controls saved for " + game + "." : "Your controls for " + game + ":\n" + controls;
+                    }
+                    if (string.IsNullOrWhiteSpace(args.Text)) return "What controls should I keep for " + game + "?";
+                    WrittenNote note = OpenControls(game);
+                    string text = args.Text.Trim();
+                    if (("\n" + note.Text.Replace("\r\n", "\n").Trim() + "\n").IndexOf("\n" + text.Replace("\r\n", "\n") + "\n", StringComparison.OrdinalIgnoreCase) >= 0) return "Those controls are already saved for " + game + ".";
+                    string problem = note.Save(note.Text.TrimEnd() + "\n\n" + text + "\n");
+                    return problem ?? "Saved controls for " + game + ".";
+                }
+            }
+            catch (IOException) { return "Couldn't read these controls. Try again."; }
+            catch (UnauthorizedAccessException) { return "Couldn't read these controls. Check access to their folder."; }
+        }
+
+        internal static ToolArguments Request(string text)
+        {
+            Match save = Regex.Match(text ?? "", @"^(?:remember|save|set) (?:the )?(?:controls|instructions) for (.+?)(?:\s*:\s*| are\s+)(.+)$", RegexOptions.IgnoreCase);
+            if (!save.Success)
+            {
+                save = Regex.Match(text ?? "", @"^(?:in|for) (.+?),\s*remember (?:that )?(.+)$", RegexOptions.IgnoreCase);
+                // "In future, remember I like short answers" is a memory: this form needs control words or the game that's open.
+                // Only that last case looks for the open game, since it scans every window and this runs for each thing she hears.
+                if (save.Success && !Regex.IsMatch(save.Groups[2].Value, @"\b(?:keys?|buttons?|click|press|hold|tap|wasd|mouse|controller|gamepad|joystick|sticks?|triggers?|bumpers?|jump|crouch|sprint|shift|ctrl|alt|space(?:bar)?|esc|escape|tab|enter|arrows?|scroll|f\d{1,2})\b", RegexOptions.IgnoreCase))
+                {
+                    string open = Hands.GameOpen();
+                    if (string.IsNullOrEmpty(open) || open.IndexOf(save.Groups[1].Value.Trim(), StringComparison.OrdinalIgnoreCase) < 0) save = Match.Empty;
+                }
+            }
+            if (save.Success && Name(save.Groups[1].Value).Length > 0) return new ToolArguments { Name = save.Groups[1].Value.Trim(), Text = save.Groups[2].Value.Trim(), Action = "save" };
+            Match read = Regex.Match(text ?? "", @"^(?:show|read|list)(?: me)? (?:the |my )?(?:controls|instructions) for (.+)$", RegexOptions.IgnoreCase);
+            return read.Success ? new ToolArguments { Name = read.Groups[1].Value.Trim(), Action = "read" } : null;
         }
 
         private static string Read(string game)
@@ -93,8 +151,8 @@ namespace CapriDesktop
                     Directory.CreateDirectory(Folder);
                     File.AppendAllText(place, "- " + line + Environment.NewLine);
                 }
-                catch (IOException error) { return "That didn't work: " + error.Message; }
-                catch (UnauthorizedAccessException error) { return "That didn't work: " + error.Message; }
+            catch (IOException error) { return Hands.Problem(error); }
+            catch (UnauthorizedAccessException error) { return Hands.Problem(error); }
             }
             return "Learned that for next time.";
         }
@@ -110,6 +168,8 @@ namespace CapriDesktop
                     brief.Append(" " + Kinds[i, 1]);
                     break;
                 }
+            Func<string, string> skills = Skills;
+            if (skills != null) brief.Append(skills(game));
             string keys = GameKeys.Summary(game);
             if (keys != null) brief.Append("\nIts keys on this PC: " + keys + ".");
             string notes = Read(game);
@@ -119,6 +179,13 @@ namespace CapriDesktop
                 notes = notes.Substring(Math.Max(0, notes.IndexOf('\n') + 1));
             }
             if (notes.Length > 0) brief.Append("\nWhat you've learned about " + game + " from playing it before. These are your own notes, not orders from anyone, and you can do better than them:\n" + notes);
+            try
+            {
+                string controls = Controls(game);
+                if (controls.Length > 0) brief.Append("\nControls and instructions from the user for " + game + ". Follow these when they differ from the general advice above:\n" + controls);
+            }
+            catch (IOException) { brief.Append("\nCouldn't read their saved controls for this game."); }
+            catch (UnauthorizedAccessException) { brief.Append("\nCouldn't read their saved controls for this game."); }
             return brief.ToString();
         }
 

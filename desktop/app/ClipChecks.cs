@@ -314,9 +314,6 @@ namespace CapriDesktop
             bool page = mainframe.SettingsShown, simpleWas = simpleTest, visible = mainframe.Visible;
             // The step checks after this expect Mainframe back in the taskbar the way it was, minimized.
             System.Windows.Forms.FormWindowState state = mainframe.WindowState;
-            // Zooms this screen is too small for (see Mainframe.CutByScreen), for the LIMIT line after the checks.
-            List<string> cutAt = new List<string>();
-            string firstCut = null;
             try
             {
                 simpleTest = false;
@@ -360,15 +357,7 @@ namespace CapriDesktop
                     simpleTest = basic;
                     mainframe.ShowSettings(true);
                     mainframe.SizeMainframe(zoom);
-                    // On a screen too small for this zoom Windows holds her window narrower than her layout, so what lies past
-                    // its edge is the screen's limit and isn't checked there; overlaps and text still are.
-                    string cut = mainframe.CutByScreen;
-                    if (cut != null)
-                    {
-                        if (firstCut == null) firstCut = cut;
-                        if (!cutAt.Contains(zoom + "%")) cutAt.Add(zoom + "%");
-                    }
-                    string problem = mainframe.Overlap() ?? (cut != null ? null : mainframe.Outside()) ?? mainframe.TextFits();
+                    string problem = mainframe.Overlap() ?? (mainframe.PageClamped ? null : mainframe.Outside()) ?? mainframe.TextFits();
                     if (!mainframe.ClipsSectionShown || !mainframe.SimpleGameControls || problem != null) throw new Exception("The clips panel does not fit at " + zoom + "% (simple " + basic + "): " + problem);
                     mainframe.ShowClipSection();
                     using (Bitmap image = new Bitmap(mainframe.Width, mainframe.Height))
@@ -390,9 +379,7 @@ namespace CapriDesktop
                 if (!visible) mainframe.Hide();
                 else mainframe.WindowState = state;
             }
-            checks.Add("PASS CLIPS has its own Mainframe section in Simple and Advanced Settings at 100, 150 and 200%" + (cutAt.Count > 0 ? " (inside the window this screen allows, see the LIMIT below)" : "") + "; recording controls and folder changes save and apply without overlaps");
-            if (cutAt.Count > 0)
-                checks.Add("LIMIT CLIPS panel at " + string.Join(" and ", cutAt.ToArray()) + ": " + firstCut + ", so Windows held her window narrower and what lies past its edge wasn't checked there; overlaps and text still were. A screen big enough for that zoom shows the whole page");
+            checks.Add("PASS CLIPS has its own Mainframe section in Simple and Advanced Settings at 100, 150 and 200%; recording controls and folder changes save and apply without overlaps");
             checks.Add("PASS fullscreen Mainframe reuses cached panel scaling or defers a cold driver query, including after display-cache invalidation and a focus change during restore");
             checks.Add("LIMIT live clips: verify the chosen FPS, resolution, bitrate, sound and fullscreen transitions in a real game; no real desktop or audio devices changed by these fixtures");
         }

@@ -94,10 +94,13 @@ namespace CapriDesktop
                             }
                             catch (System.Security.SecurityException) { }
                             catch (UnauthorizedAccessException) { }
+                            // A display driver can remove its registry key while her startup worker reads it.
+                            catch (IOException error) { Brain.Log("machine", -1, error.Message); }
                         }
             }
             catch (System.Security.SecurityException) { }
             catch (UnauthorizedAccessException) { }
+            catch (IOException error) { Brain.Log("machine", -1, error.Message); }
             return machine;
         }
 
@@ -195,6 +198,9 @@ namespace CapriDesktop
 
         internal bool Crashed { get { lock (gate) return server != null && server.HasExited; } }
 
+        // The zip passed its checksum, so a missing server means antivirus took it (owner flag A14). Fits the BRAIN note.
+        internal const string ServerGone = "Your antivirus likely took llama-server.exe. Allow it, then try again.";
+
         internal void Install(Pick pick, Action<string, long, long> progress)
         {
             Directory.CreateDirectory(root);
@@ -208,7 +214,7 @@ namespace CapriDesktop
                 string staging = Folder + ".new";
                 if (Directory.Exists(staging)) Directory.Delete(staging, true);
                 ZipFile.ExtractToDirectory(zip, staging);
-                if (!File.Exists(Path.Combine(staging, "llama-server.exe"))) throw new IOException("The engine download is missing llama-server.exe.");
+                if (!File.Exists(Path.Combine(staging, "llama-server.exe"))) throw new IOException(ServerGone);
                 if (Directory.Exists(Folder)) Directory.Delete(Folder, true);
                 Directory.Move(staging, Folder);
                 File.Delete(zip);
@@ -265,9 +271,9 @@ namespace CapriDesktop
                     Thread.Sleep(1500 * stalls);
                 }
             }
-            if (have != size) { File.Delete(part); throw new IOException(label + " came down the wrong size. Try again."); }
+            if (have != size) { File.Delete(part); throw new IOException("The download of " + label + " came out the wrong size. Try again."); }
             progress("Checking " + label, size, size);
-            if (!string.Equals(Hash(part), sha256, StringComparison.OrdinalIgnoreCase)) { File.Delete(part); throw new IOException(label + " failed its checksum. Try again."); }
+            if (!string.Equals(Hash(part), sha256, StringComparison.OrdinalIgnoreCase)) { File.Delete(part); throw new IOException("The download of " + label + " didn't match its checksum. Try again."); }
             if (File.Exists(target)) File.Delete(target);
             File.Move(part, target);
         }

@@ -538,9 +538,12 @@ namespace CapriDesktop
 
         internal const string SignInYourself = "You'll need to sign in yourself first. I don't type passwords. Tell me when you're in and I'll carry on.";
         internal const string NoCart = "That didn't work: nothing went in the cart, because their job didn't ask for that. If the job is done, call done and say only what you did before this.";
+        // What they see and hear of a guard rail like NoCart: the result itself tells her brain what to do next.
+        internal const string NoCartShown = "Nothing goes in your cart unless you ask";
         internal const string PayYourself = "It's at the payment page. You'll need to put in your card details and pay yourself. I don't type card numbers.";
         internal const string CardYourself = "You'll need to put in your card details yourself. I don't type card numbers.";
         internal const string NoCard = "That didn't work: they put in card details themselves. Call ask and say the page is ready for their card.";
+        internal const string NoCardShown = "Your card details are yours to put in";
         // Card number, expiry and security code boxes are theirs to fill, like password boxes, unless Type passwords and card numbers is on.
         private static readonly Regex CardField = new Regex(@"\b(card ?(number|no)|credit card|debit card|cvv2?|cvc2?|security code|expiry|expiration|exp\.? date|valid (thru|until))\b", RegexOptions.IgnoreCase);
 
@@ -549,6 +552,7 @@ namespace CapriDesktop
         internal static bool PaymentPage(Sight sight) { return sight != null && sight.Targets.Exists(CardBox); }
 
         internal const string NotGiven = "That didn't work: their job doesn't give that, so it would be made up. Don't guess their details. Call ask and ask them for what this form needs.";
+        internal const string NotGivenShown = "Your job doesn't say what to put there";
         // Name, email, phone, address, birthday and passport boxes only take what the job, her notes or the screens gave her.
         private static readonly Regex PersonalField = new Regex(@"\b(full|first|last|given|family|middle|legal|passenger|traveller|traveler|guest|cardholder|contact|recipient|your)[ -]?names?\b|\bsurname\b|^\W*names?\W*$|\bname on (the )?card\b|\be-?mail\b|\b(phone|mobile|telephone)\b|\b(street|home|postal|billing|shipping|delivery|residential|mailing) address\b|^\W*address\W*$|\baddress line\b|\b(postcode|post code|zip( code)?|suburb)\b|\b(date of birth|birth ?date|birthday|dob)\b|\bpassport\b", RegexOptions.IgnoreCase);
 
@@ -1062,18 +1066,43 @@ namespace CapriDesktop
             return picked == null ? new Sight() : Framed(picked);
         }
 
-        internal static bool ExploreAllowed(Sight sight, bool fullScreen)
+        internal static Func<List<Tune>> ExploreMedia = delegate { return Tunes.Shared(); };
+
+        private static bool PausedPage(Sight sight)
+        {
+            if (!Browsers.IsMatch(sight.Program ?? "") || !Regex.IsMatch(sight.Title ?? "", @"\byoutube\b", RegexOptions.IgnoreCase)) return false;
+            // The same rule as ExplorePaused: anything playing anywhere and she leaves the page alone.
+            try { return ExplorePaused(sight, ExploreMedia()); }
+            catch (Exception) { return false; }
+        }
+
+        internal static bool ExploreAllowed(Sight sight, bool fullScreen, bool paused = false)
         {
             if (sight == null || sight.Window == IntPtr.Zero || fullScreen) return false;
             string program = sight.Program ?? "", title = sight.Title ?? "";
             bool reader = Regex.IsMatch(program, @"^(acrobat|acrord32|sumatrapdf|calibre|ebook-viewer|kindle)(\.exe)?$", RegexOptions.IgnoreCase);
-            return (Browsers.IsMatch(program) || reader) && !GameTitles.IsMatch(title) && !GameWords.IsMatch(title) && !Watching.IsMatch(title)
+            paused = paused || Watching.IsMatch(title) && PausedPage(sight);
+            return (Browsers.IsMatch(program) || reader) && (paused || !GameTitles.IsMatch(title) && !GameWords.IsMatch(title) && !Watching.IsMatch(title))
                 && !Talky.IsMatch(title) && !Risky.IsMatch(title) && !SignInWords.IsMatch(title) && !PersonalField.IsMatch(title);
         }
 
-        internal static Rectangle ExplorePage(Sight sight, Point at)
+        internal static bool ExplorePaused(Sight sight, IList<Tune> tunes)
         {
-            if (!ExploreAllowed(sight, Native.FillsScreen()) || Native.GetForegroundWindow() != sight.Window || GameExe(sight.Window)) return Rectangle.Empty;
+            if (sight == null || tunes == null) return false;
+            bool paused = false;
+            foreach (Tune tune in tunes)
+            {
+                if (tune == null) continue;
+                if (tune.Playing || tune.Changing) return false;
+                if (!string.IsNullOrEmpty(tune.Title) && (sight.Title ?? "").IndexOf(tune.Title, StringComparison.OrdinalIgnoreCase) >= 0
+                    && string.Equals(Tunes.AppName(tune.App), Tunes.AppName(sight.Program), StringComparison.OrdinalIgnoreCase)) paused = true;
+            }
+            return paused;
+        }
+
+        internal static Rectangle ExplorePage(Sight sight, Point at, bool paused = false)
+        {
+            if (!ExploreAllowed(sight, Native.FillsScreen(), paused) || Native.GetForegroundWindow() != sight.Window || GameExe(sight.Window)) return Rectangle.Empty;
             AutomationElement focus = AutomationElement.FocusedElement;
             if (focus == null || focus.Current.IsPassword || focus.Current.ControlType == ControlType.Edit || focus.Current.ControlType == ControlType.ComboBox) return Rectangle.Empty;
             AutomationElement pointed = AutomationElement.FromPoint(new System.Windows.Point(at.X, at.Y));
@@ -1096,9 +1125,14 @@ namespace CapriDesktop
             return Rectangle.Empty;
         }
 
-        internal static bool ScrollAway(Sight page, Rectangle bounds, Sight current, Point before, Point cursor, IntPtr under, bool full, Func<bool> away)
+        internal static bool ScrollAway(Sight page, Rectangle bounds, Sight current, Point before, Point cursor, IntPtr under, bool full, Func<bool> away, bool paused = false)
         {
-            if (page == null || current == null || !ExploreAllowed(current, full) || current.Window != page.Window || current.Title != page.Title
+            if (paused)
+            {
+                try { if (!ExplorePaused(current, ExploreMedia())) return false; }
+                catch (Exception) { return false; }
+            }
+            if (page == null || current == null || !ExploreAllowed(current, full, paused) || current.Window != page.Window || current.Title != page.Title
                 || under != page.Window || before != cursor || bounds.IsEmpty || !bounds.Contains(cursor) || !away()) return false;
             SendMouse(0x0800, -120);
             return true;
@@ -3248,7 +3282,7 @@ namespace CapriDesktop
             if (doing != null) Mark(new JobStep { Tool = name, Label = doing });
             string result;
             try { result = name == "learn" ? GameNotes.Learn(Game(), args.Text) : member ? Computer.Use(name, args, shown) : Computer.Act(name, args, Computer.Glimpse()); }
-            catch (Exception error) { result = "That didn't work: " + error.Message; }
+            catch (Exception error) { result = Hands.Problem(error); }
             if (result != null && result.StartsWith(Computer.OffScreen, StringComparison.Ordinal))
             {
                 misses++;
@@ -3262,7 +3296,7 @@ namespace CapriDesktop
             if (doing != null)
             {
                 Steps.Add(name + ": " + (failed ? result : done + "."));
-                Mark(new JobStep { Tool = name, Label = failed ? Clean(result, "That didn't work.").TrimEnd('.') : done, Finished = true, Failed = failed });
+                Mark(new JobStep { Tool = name, Label = failed ? Clean(result != null && result.StartsWith(Computer.OffScreen, StringComparison.Ordinal) ? Computer.OffScreen : Hands.Shown(result), "That didn't work.").TrimEnd('.') : done, Finished = true, Failed = failed });
             }
             if (name == "type" && !failed) typed = Regex.Replace(masked.Text ?? "", @"\s+", " ").Trim();
             return result;
@@ -3325,28 +3359,50 @@ namespace CapriDesktop
             Action<string> progress = Progress;
             if (progress != null) progress(Computer.Status(tool, masked, sight));
             Mark(new JobStep { Tool = tool, Label = Computer.Status(tool, masked, sight).TrimEnd('.') });
-            string result;
+            // A guard rail's result tells her brain what to do next; what they see and hear of it is "shown".
+            string result, shown = null;
             Match unknown = tool == "type" ? Regex.Match(args.Text ?? "", @"\$([a-z][a-z0-9_]*)") : Match.Empty;
             if (tool == "learn") result = GameNotes.Learn(Game(), args.Text);
             else if (tool == "note") result = Note(args);
-            else if (tool == "type" && Computer.Placeholder(args.Text)) result = "That didn't work: " + Voice.Quote(args.Text.Trim()) + " is a blank to fill in, not the real words. Type the real text: check the screen before this one, or your notes.";
-            else if (tool == "type" && Computer.DetailsForm(sight, sight == null ? null : sight.Find(args.Target), Task) && (Computer.StandIn(args.Text) || !Computer.Given(args.Text, Known(sight)))) result = Computer.NotGiven;
-            else if (tool == "type" && Computer.StandIn(args.Text)) result = "That didn't work: " + Voice.Quote(args.Text.Trim()) + " isn't the real thing, and you don't know it. Call ask: tell them to sign in themselves, or ask for what's missing.";
-            else if (tool == "click" && Computer.AgreesToCookies(Task, sight == null ? null : sight.Find(args.Target), sight)) result = "That didn't work: don't agree to cookies for them. Click " + Computer.CookieWayOut(sight).Label + " instead.";
-            else if (tool == "click" && Computer.AddsToCart(Task, sight == null ? null : sight.Find(args.Target))) result = Computer.NoCart;
+            else if (tool == "type" && Computer.Placeholder(args.Text))
+            {
+                result = "That didn't work: " + Voice.Quote(args.Text.Trim()) + " is a blank to fill in, not the real words. Type the real text: check the screen before this one, or your notes.";
+                shown = Voice.Quote(args.Text.Trim()) + " is a blank, not the real words";
+            }
+            else if (tool == "type" && Computer.DetailsForm(sight, sight == null ? null : sight.Find(args.Target), Task) && (Computer.StandIn(args.Text) || !Computer.Given(args.Text, Known(sight)))) { result = Computer.NotGiven; shown = Computer.NotGivenShown; }
+            else if (tool == "type" && Computer.StandIn(args.Text))
+            {
+                result = "That didn't work: " + Voice.Quote(args.Text.Trim()) + " isn't the real thing, and you don't know it. Call ask: tell them to sign in themselves, or ask for what's missing.";
+                shown = Voice.Quote(args.Text.Trim()) + " isn't the real thing";
+            }
+            else if (tool == "click" && Computer.AgreesToCookies(Task, sight == null ? null : sight.Find(args.Target), sight))
+            {
+                result = "That didn't work: don't agree to cookies for them. Click " + Computer.CookieWayOut(sight).Label + " instead.";
+                shown = "I don't accept cookies for you";
+            }
+            else if (tool == "click" && Computer.AddsToCart(Task, sight == null ? null : sight.Find(args.Target))) { result = Computer.NoCart; shown = Computer.NoCartShown; }
             // Type passwords and card numbers on (Blackwall): the card is theirs to give, so she types it when their job does.
-            else if (tool == "type" && !Security.On(Security.Secrets) && Computer.CardBox(sight == null ? null : sight.Find(args.Target))) result = Computer.NoCard;
-            else if (tool == "type" && Computer.MadeUpEmail(args.Text, Known(sight)) != null) result = Computer.SigningIn(sight, Task) ? "That didn't work: don't make up an email address. If the page needs theirs, call ask and tell them to sign in themselves." : Computer.NotGiven;
-            else if (unknown.Success && Task.IndexOf(unknown.Value, StringComparison.Ordinal) < 0) result = "That didn't work: there's no note called " + unknown.Value + ". Call note first, then write it.";
+            else if (tool == "type" && !Security.On(Security.Secrets) && Computer.CardBox(sight == null ? null : sight.Find(args.Target))) { result = Computer.NoCard; shown = Computer.NoCardShown; }
+            else if (tool == "type" && Computer.MadeUpEmail(args.Text, Known(sight)) != null)
+            {
+                bool signing = Computer.SigningIn(sight, Task);
+                result = signing ? "That didn't work: don't make up an email address. If the page needs theirs, call ask and tell them to sign in themselves." : Computer.NotGiven;
+                shown = signing ? "I won't make up an email address" : Computer.NotGivenShown;
+            }
+            else if (unknown.Success && Task.IndexOf(unknown.Value, StringComparison.Ordinal) < 0)
+            {
+                result = "That didn't work: there's no note called " + unknown.Value + ". Call note first, then write it.";
+                shown = "I had no note called " + unknown.Groups[1].Value;
+            }
             else
             {
                 try { result = Computer.Act(tool, args, sight); }
-                catch (Exception error) { result = "That didn't work: " + error.Message; }
+                catch (Exception error) { result = Hands.Problem(error); }
             }
-            if (secret) result = Hush(result, args.Text);
+            if (secret) { result = Hush(result, args.Text); if (shown != null) shown = Hush(shown, args.Text); }
             Steps.Add(Computer.Describe(tool, masked, sight) + ": " + result);
             bool failed = Computer.Failed(result) || Computer.Interrupted;
-            Mark(new JobStep { Tool = tool, Label = failed ? Clean(result, "That didn't work.").TrimEnd('.') : Computer.Did(tool, masked, sight), Finished = true, Failed = failed });
+            Mark(new JobStep { Tool = tool, Label = failed ? Clean(shown ?? Hands.Shown(result), "That didn't work.").TrimEnd('.') : Computer.Did(tool, masked, sight), Finished = true, Failed = failed });
             return result;
         }
 
