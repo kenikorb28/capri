@@ -131,7 +131,7 @@ object Toolbox {
             s(p("name", "Which mode", listOf("normal", "study", "dev", "gaming")) + "," + p("level", "For study, how deep", listOf("beginner", "normal", "advanced")), "name"), -1, "switch to study, developer or gaming mode", "modes"),
         ToolSpec("gaming_panel", "Show or hide your small gaming panel over their game: battery, heat, memory and the clock, with your mic and chat buttons.",
             s(p("action", "show or hide", listOf("show", "hide")), "action"), -1, "show a small gaming panel over games", "modes"),
-        ToolSpec("sync", "Work with their Capri on the PC: send this conversation there to carry on, bring back what they were doing on the PC, sync your memories, send a file to the PC, or check the link.",
+        ToolSpec("sync", "Capri Link with their PC, where you are the same Capri with the same memory (it syncs by itself): hand this conversation to the PC so they carry on there, say what they were doing with you on the PC, sync right now, send a file to the PC, get the files the PC queued, or check the link.",
             s(p("action", "What to do: send_file sends a file they pick to the PC, pull_files brings the files the PC queued for the phone", listOf("send_chat", "pull_chat", "sync_memory", "send_file", "pull_files", "status"))), -1, "carry on with your Capri on the PC", "sync"),
         ToolSpec("emergency", "Their emergency button, only if they set it up: call their emergency contact, or share where they are with them. Never use it unless they clearly ask for emergency help.",
             s(p("action", "What to do", listOf("call", "share_location", "info")), "action"), -1, "call your emergency contact when you ask", "android",

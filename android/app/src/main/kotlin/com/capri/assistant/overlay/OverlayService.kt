@@ -123,6 +123,8 @@ class OverlayService : Service(), CapriListener {
         capri.addListener(this)
         registerReceiver(screen, IntentFilter().apply { addAction(Intent.ACTION_SCREEN_ON); addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_USER_PRESENT); addAction(Intent.ACTION_BATTERY_CHANGED) })
         try { getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(net) } catch (_: Exception) { }
+        // Capri Link: while her bubble runs, a change on their PC reaches her in a moment.
+        capri.sync.configure()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -355,6 +357,7 @@ class OverlayService : Service(), CapriListener {
         instance = null
         capri.removeListener(this)
         capri.wake.configure()
+        capri.sync.configure()
         try { unregisterReceiver(screen) } catch (_: Exception) { }
         try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(net) } catch (_: Exception) { }
         for (v in listOfNotNull(bubble, panel, speech, hud, probe)) try { wm.removeView(v) } catch (_: Exception) { }

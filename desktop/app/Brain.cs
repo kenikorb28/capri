@@ -734,6 +734,11 @@ namespace CapriDesktop
 
         internal const string NotesHead = "# What Capri remembers about you\n> She reads this every time you chat. Edit or delete anything here.\n\n";
         private static readonly object noting = new object();
+        // Capri Link (Link.cs) writes her notes and logs under the same locks as she does, so neither side's write is lost.
+        internal static object NotesGate { get { return noting; } }
+        internal static object LogGate { get { return writing; } }
+        // What they were doing with her on their phone, from Capri Link, for her prompt. Null when no phone is linked.
+        internal static volatile Func<string> OtherDevice;
         // Only secrets and things that find them in real life stay out of me.md: Lachy wants every other memory to save.
         private static readonly Regex Personal = new Regex(@"\b(passwords?|passcodes?|pin (code|number)|log ?in details|credit card|card number|bank (account|details|number)|account number|sort code|routing number|social security|passport|(home|street|postal|email|e-mail) address|(my|their|his|her) address|postcode|post code|zip code|(phone|mobile|cell) number|surname|last name|full name|real name|date of birth|(i|they) live (in|at|on)|(my|their|his|her) school(?: is|'s| is called| called)|school (is )?called)\b|@\w+\.\w+|\d[\d\s-]{6,}\d|\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b", RegexOptions.IgnoreCase);
         internal const string Private = "Addresses, schools, numbers and passwords stay out of my notes.";
@@ -898,7 +903,15 @@ namespace CapriDesktop
                 string when = ago.TotalMinutes < 1 ? "Just now" : ago.TotalMinutes < 60 ? (int)ago.TotalMinutes + " min ago" : ago.TotalHours < 2 ? "An hour ago" : (int)ago.TotalHours + " hours ago";
                 lines.Insert(0, "- " + when + (all[i].Asked ? ", when they asked you to look: " : ": ") + saw.TrimEnd('.') + ". " + (all[i].Said != null ? "You said: " + Voice.Quote(all[i].Said) : all[i].Asked ? "You told them about it." : "You stayed quiet."));
             }
-            return lines.Count == 0 ? "" : "\nWhat you really saw on their screen lately, oldest first. These were real looks, not guesses: use them when they ask what you saw or what's going on, and never say you guessed. Don't bring them up out of nowhere:\n" + string.Join("\n", lines.ToArray());
+            return (lines.Count == 0 ? "" : "\nWhat you really saw on their screen lately, oldest first. These were real looks, not guesses: use them when they ask what you saw or what's going on, and never say you guessed. Don't bring them up out of nowhere:\n" + string.Join("\n", lines.ToArray())) + Linked();
+        }
+
+        private static string Linked()
+        {
+            Func<string> other = OtherDevice;
+            if (other == null) return "";
+            try { return other() ?? ""; }
+            catch (Exception) { return ""; }
         }
 
         // Every exchange goes in a daily transcript on this PC, and the picked brain folds older lines into memories.md, which she reads every chat.
@@ -913,6 +926,9 @@ namespace CapriDesktop
         private static int folding;
         private static long foldWait;
         private static long lastLine;
+        // When they last said something to her or she answered, in local ticks; 0 until the first line since she started. Capri Link
+        // tells the phone how long ago that was.
+        internal static long LastLine { get { return System.Threading.Interlocked.Read(ref lastLine); } }
         internal const string MemoriesHead = "# What Capri remembers from your chats\n> She writes this herself from your chats and reads it every time you talk. Edit or delete anything here.\n\n";
         private const string FoldRules = "You keep Capri's long-term memory: memories.md, short notes she reads before every chat with the user so she remembers what happened between them. Rewrite the whole file with the new chat lines folded in, and reply with only the file's lines.\n" +
             "Shape: a '## ' heading per day, written like '## Tuesday 3 March 2026', oldest first, each with short '- ' bullet points. New lines go under their own day's heading. Write about the user as 'they' (their 'I' and 'my' become 'they' and 'their') and about Capri as 'I'.\n" +
@@ -1080,6 +1096,8 @@ namespace CapriDesktop
             }
             lock (writing)
             {
+                // Capri Link may have brought memories from their phone while her brain was writing: then this fold waits for next time.
+                if (after != null && MemoriesBody() != before) return "Her memories changed while she was folding them, so she'll fold again next time.";
                 if (after != null) File.WriteAllText(memoriesPath, MemoriesHead + after + "\n");
                 // Lines written while she was folding wait for next time.
                 string[] now = File.Exists(queuePath) ? File.ReadAllLines(queuePath) : new string[0];

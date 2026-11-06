@@ -1,13 +1,17 @@
-name: CI
+# Capri Desktop: builds Capri.exe and Capri-Setup.exe on GitHub's Windows machines and runs her whole smoke test
+# (Capri Link included), then the Mac and Linux port. Download the result from the run's "Artifacts".
+name: Capri Desktop
 
 on:
   push:
     branches-ignore: [gh-pages]
+    paths: ["desktop/**", "contract/**", "VERSION", ".github/workflows/capri-desktop.yml"]
   pull_request:
+    paths: ["desktop/**", "contract/**", "VERSION"]
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: desktop-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -16,21 +20,33 @@ permissions:
 jobs:
   windows:
     runs-on: windows-2025
-    timeout-minutes: 35
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: desktop
     steps:
       - uses: actions/checkout@v5
       - name: Build and smoke test
         shell: pwsh
         run: ./ci/build-windows.ps1 -OutputDirectory out/windows -SmokeTest -SmokeSeconds 900
       - uses: actions/upload-artifact@v4
+        with:
+          name: capri-desktop-windows
+          path: |
+            desktop/out/windows/Capri-Setup.exe
+            desktop/out/windows/Capri.exe
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: smoke-windows
-          path: out/windows/smoke
+          path: desktop/out/windows/smoke
 
   linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desktop
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
@@ -54,11 +70,17 @@ jobs:
         if: always()
         with:
           name: smoke-linux
-          path: smoke
+          path: desktop/smoke
 
+  # GitHub counts a Mac minute as ten on a private repository's free minutes: the Mac check runs when you start it by hand
+  # (Actions > Capri Desktop > Run workflow).
   mac:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-15
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desktop
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
@@ -77,4 +99,4 @@ jobs:
         if: always()
         with:
           name: smoke-mac
-          path: smoke
+          path: desktop/smoke

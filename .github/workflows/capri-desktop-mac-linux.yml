@@ -1,4 +1,5 @@
-name: Mac and Linux
+# Capri Desktop for Mac and Linux (the cross/ port), built and packed when the mac-linux branch is pushed.
+name: Capri Desktop Mac and Linux
 
 on:
   push:
@@ -9,6 +10,9 @@ jobs:
   mac:
     runs-on: macos-15
     timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: desktop
     env:
       CAN_NOTARIZE: ${{ secrets.MAC_CERT_P12 != '' && secrets.APPLE_APP_PASSWORD != '' }}
     steps:
@@ -100,17 +104,20 @@ jobs:
         with:
           name: mac
           path: |
-            Capri-mac-apple-silicon.zip
-            Capri-mac-intel.zip
+            desktop/Capri-mac-apple-silicon.zip
+            desktop/Capri-mac-intel.zip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: smoke-mac
-          path: smoke
+          path: desktop/smoke
 
   linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desktop
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
@@ -136,9 +143,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: linux
-          path: Capri-linux-x64.tar.gz
+          path: desktop/Capri-linux-x64.tar.gz
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: smoke-linux
-          path: smoke
+          path: desktop/smoke

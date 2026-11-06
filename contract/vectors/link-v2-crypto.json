@@ -1,0 +1,23 @@
+{
+  "about": "Capri Link v2 crypto test vector. Both apps must reproduce every value: Kotlin in android/core (LinkTest), C# in desktop/app/Link.cs (smoke check). EC values come from tools/make_vectors.py (pure Python); 'sealed' from the Kotlin seal, checked by both.",
+  "curve": "P-256",
+  "pcPrivate": "878b0c9c488a59e6aa3810937ec52ac1a44d92af7010c6a461f524fcaef03e5c",
+  "pcPublic": "0471d13480c5281da23eeecb065c29e9ce7149514eebb0b5f2906be5ff1d2690067003de466b8a27c1a21ec04242725d06477d046cb9ab95177d0ff94ae50d43b7",
+  "phonePrivate": "0dbcee2e2eb8b4c6c6418a9e8efbe7351a7dc324fa3526af66a8d96d56c626e7",
+  "phonePublic": "045acb67c856167b5fb9860e9aa0bfb9612f4bcc501cfd7b7635b8725d3ba68bbcc1f769125418efd0c0be0bdd0b0d2cca5bc5c37efe8c409f39e9c97a79727823",
+  "sharedX": "4af8621bf0954a6baed61c100bc8e209e06f82780499d280de0eb4e1f8e868ea",
+  "sharedHash": "85ae5d8069c83ffc46c71e7dd48f5fa3eed19486e8f712492dc8be5663716d48",
+  "code": "K7Q2-M9XA",
+  "codeNormalized": "K7Q2M9XA",
+  "salt": "000102030405060708090a0b0c0d0e0f",
+  "iterations": 20000,
+  "codeKey": "4656ab988baa6eb5c08017ddacbbf5594fc0c80fd4e7f7d10841261ee6d51553",
+  "pairKey": "792518a342883f465c543c41c8ff94415a0bc162bfdcac971a9b9ef80681c8b8",
+  "longKey": "4030fb70f916eec28e46cb545aae3777dfc252ea6d8e550cf9d575062f97e017",
+  "encKey": "6c1b2d604d5b82dd9bccaf030ccc4ef1a6ea50d970e8df2276cbb4ff1646d406",
+  "macKey": "5f53b5c735f56270fdd58960d87e107e5c044b8440eacd955435aa8be2071fee",
+  "plaintext": "{\"op\":\"ping\",\"ts\":1730000000000,\"id\":\"phone-1\",\"n\":\"00\",\"data\":{}}",
+  "aad": "capri-link-v2 request",
+  "iv": "202122232425262728292a2b2c2d2e2f",
+  "sealed": "ICEiIyQlJicoKSorLC0uL+axpv2PW7jDcMRsUv08chFFaLinKBrSw9m1jyWszo9gZlrYChXQznDNxnCBCNpdy87J7kYSKl869BQRqSYm1MpwQtqupnCebApHyWkgX6R7G5dpMnToMABI22lsqTx/YRuWjPKf7yHPUjb+6+Ap2nw="
+}

@@ -10,6 +10,7 @@ import com.capri.assistant.CapriApp
 import com.capri.assistant.assist.CapriSession
 import com.capri.assistant.data.Prefs
 import com.capri.assistant.overlay.OverlayService
+import com.capri.assistant.sync.LinkJob
 import com.capri.assistant.sync.SyncHub
 import com.capri.assistant.system.Alarms
 import com.capri.assistant.system.DeviceInfo
@@ -123,6 +124,8 @@ class Capri(val app: CapriApp) {
         brain.situation = { DeviceInfo.situation(app, this) }
         reminders.schedule = { Alarms.schedule(app, it) }
         reminders.unschedule = { Alarms.cancel(app, it) }
+        // Capri Link: whatever she writes down reaches their PC a few seconds later.
+        memory.changed = { sync.soon() }
         apply()
         watches.load()
         io.execute {
@@ -130,6 +133,7 @@ class Capri(val app: CapriApp) {
             memory.warmUp()
             val restored = brain.historyCopy().map { Line(if (it.role == "user") Line.YOU else Line.CAPRI, it.content) }
             main.post { if (lines.isEmpty()) { lines.addAll(restored); for (l in listeners) l.onLine(Line(Line.SYS, "")) } }
+            if (sync.paired()) { LinkJob.schedule(app); sync.periodic() }
         }
     }
 
@@ -156,6 +160,7 @@ class Capri(val app: CapriApp) {
         brain.source = source()
         mouth.configure()
         wake.configure()
+        sync.configure()
     }
 
     // ---- which brain: LOCAL, HYBRIDE or CLOUD
@@ -241,6 +246,8 @@ class Capri(val app: CapriApp) {
             val noNet = chosen != null && chosen.host == null && !DeviceInfo.online(app)
             if (noNet) brain.source = null
             try {
+                // Capri Link: if the last sync is old, a short one first, so she knows what they just told her on the PC.
+                sync.quick()
                 val before = hands.runs
                 val answer = try {
                     brain.ask(asked, images, context)
@@ -261,6 +268,8 @@ class Capri(val app: CapriApp) {
                     brain.ask(asked, images, context)
                 }
                 main.post { deliver(answer, voice) }
+                // And what was said here reaches the PC a few seconds later.
+                sync.soon(6000)
                 brain.foldIfDue()
             } catch (e: HttpCancelled) {
                 main.post { setMood(Mood.IDLE) }

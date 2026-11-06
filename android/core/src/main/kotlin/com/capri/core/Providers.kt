@@ -6,7 +6,7 @@ object Lang {
     fun pick(en: String, fr: String): String = if (french) fr else en
 }
 
-class BrainError(message: String, val told: Boolean = false, val status: Int = 0, val detail: String? = null, val retryAt: Long = 0L) : Exception(message)
+open class BrainError(message: String, val told: Boolean = false, val status: Int = 0, val detail: String? = null, val retryAt: Long = 0L) : Exception(message)
 
 // Where her brain lives. "ollama" talks Ollama's own API (on their PC over Wi-Fi, or in Termux on the phone), "local" any
 // OpenAI-style server (LM Studio, llama.cpp, Jan, KoboldCpp), and the rest are cloud keys, told apart by how they start.

@@ -936,7 +936,7 @@ namespace CapriDesktop
             Uri uri;
             if (!Uri.TryCreate(address, UriKind.Absolute, out uri) || uri.UserInfo.Length != 0 || uri.Fragment.Length != 0) throw new BrainException("The update download address is invalid.");
             if (local && uri.IsLoopback && uri.Scheme == Uri.UriSchemeHttp) return uri;
-            if (uri.Scheme != Uri.UriSchemeHttps || !uri.IsDefaultPort || uri.Host != "github.com" || !uri.AbsolutePath.StartsWith("/lachydotmcg/capri-desktop/releases/download/", StringComparison.Ordinal)) throw new BrainException("The update download address is invalid.");
+            if (uri.Scheme != Uri.UriSchemeHttps || !uri.IsDefaultPort || uri.Host != "github.com" || !uri.AbsolutePath.StartsWith("/kenikorb28/capri/releases/download/", StringComparison.Ordinal)) throw new BrainException("The update download address is invalid.");
             return uri;
         }
 
@@ -1972,6 +1972,8 @@ namespace CapriDesktop
             Brain.Digging = !smoke;
             if (!smoke) Brain.Keeper = brain;
             if (!smoke) brain.Load(Path.Combine(data, "chat.json"));
+            // Capri Link: the same Capri, with the same memory, on this PC and their phone. Nothing listens until a phone is paired.
+            if (!smoke) StartCapriLink(data);
             Voice.Loudness = Math.Max(0, Math.Min(150, preferences.Volume));
             VoiceFx.Pitch = Math.Max(-VoiceFx.MostPitch, Math.Min(VoiceFx.MostPitch, preferences.VoicePitch));
             VoiceFx.Speed = Math.Max(VoiceFx.Slowest, Math.Min(VoiceFx.Fastest, preferences.VoiceSpeed));
@@ -2066,6 +2068,7 @@ namespace CapriDesktop
             checkItem = new ToolStripMenuItem("Check for updates", null, delegate { CheckForUpdates(true); });
             helpItem.DropDownItems.Add(checkItem);
             updateItem = new ToolStripMenuItem("Restart to update", null, delegate { InstallUpdate(); });
+            menu.Items.Add(new ToolStripMenuItem("Capri Link…", null, delegate { OpenCapriLink(); }));
             menu.Items.Add(helpItem);
             foreach (ToolStripMenuItem parent in new[] { sizes, moves, helpItem })
             {
@@ -2631,7 +2634,7 @@ namespace CapriDesktop
         internal static Release FetchLatestRelease()
         {
             ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072;
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/lachydotmcg/capri-desktop/releases/latest");
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/kenikorb28/capri/releases/latest");
             request.UserAgent = "Capri-Desktop";
             request.Accept = "application/vnd.github+json";
             request.Timeout = 10000;
@@ -12464,6 +12467,7 @@ namespace CapriDesktop
             StopMicTest(false);
             EndWatchAlong();
             followUp.Drop();
+            StopCapriLink();
             Hands.Finder.Stop();
             clips.Dispose();
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= DisplaysChanged;
@@ -28668,7 +28672,7 @@ namespace CapriDesktop
                             if (!UpdateDue(0, now) || UpdateDue(now - 3 * TimeSpan.TicksPerHour + 1, now) || !UpdateDue(now - 3 * TimeSpan.TicksPerHour, now) || !UpdateDue(now + 1, now) || UpdateDue(now, now, 19.9, false) || !UpdateDue(now, now, 20, false) || UpdateDue(now, now, 20, true)) throw new Exception("Three-hour or startup update timing failed.");
                             checks.Add("PASS update versions, three-hour boundary, startup check and clock rollback");
                             Release release;
-                            using (MemoryStream sample = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("{\"tag_name\":\"v9.0.0\",\"draft\":false,\"prerelease\":false,\"assets\":[{\"id\":1,\"name\":\"Capri.exe\"},{\"id\":2,\"name\":\"Capri-Setup.exe\"},{\"id\":3,\"name\":\"Capri-Setup-9.0.0.exe\",\"size\":10,\"browser_download_url\":\"https://github.com/lachydotmcg/capri-desktop/releases/download/v9.0.0/Capri-Setup-9.0.0.exe\"},{\"id\":4,\"name\":\"SHA256SUMS.txt\"}]}"))) release = ParseRelease(sample);
+                            using (MemoryStream sample = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("{\"tag_name\":\"v9.0.0\",\"draft\":false,\"prerelease\":false,\"assets\":[{\"id\":1,\"name\":\"Capri.exe\"},{\"id\":2,\"name\":\"Capri-Setup.exe\"},{\"id\":3,\"name\":\"Capri-Setup-9.0.0.exe\",\"size\":10,\"browser_download_url\":\"https://github.com/kenikorb28/capri/releases/download/v9.0.0/Capri-Setup-9.0.0.exe\"},{\"id\":4,\"name\":\"SHA256SUMS.txt\"}]}"))) release = ParseRelease(sample);
                             ReleaseAsset installer = Updater.Installer(release);
                             ReleaseAsset sums = release.Assets[3];
                             if (installer != release.Assets[2] || installer.Size != 10 || installer.Url == null || Updater.Installer(new Release { Assets = new[] { release.Assets[0], release.Assets[1] } }) != release.Assets[1] || Updater.Installer(new Release { Assets = new[] { new ReleaseAsset { Name = "Capri-Setup-other.exe" } } }) == null || Updater.Installer(new Release { Assets = new[] { release.Assets[0], new ReleaseAsset { Name = "Capri-Setup.exe.zip" }, new ReleaseAsset { Name = "Capri-Setup/evil.exe" } } }) != null) throw new Exception("Installer asset picking failed.");
@@ -28681,7 +28685,7 @@ namespace CapriDesktop
                             release.Assets = new[] { installer, sums };
                             checks.Add("PASS release assets: plain and versioned setup names, executable filter, draft and prerelease rejection");
                             string assetAddress = installer.Url;
-                            foreach (string badAddress in new[] { "file:///Capri-Setup.exe", "http://github.com/lachydotmcg/capri-desktop/releases/download/v9/Capri-Setup.exe", "https://github.com.example.com/lachydotmcg/capri-desktop/releases/download/v9/Capri-Setup.exe", "https://github.com/another/project/releases/download/v9/Capri-Setup.exe" })
+                            foreach (string badAddress in new[] { "file:///Capri-Setup.exe", "http://github.com/kenikorb28/capri/releases/download/v9/Capri-Setup.exe", "https://github.com.example.com/kenikorb28/capri/releases/download/v9/Capri-Setup.exe", "https://github.com/another/project/releases/download/v9/Capri-Setup.exe" })
                             {
                                 installer.Url = badAddress;
                                 bool rejected = false;
@@ -38824,6 +38828,7 @@ namespace CapriDesktop
                             ListenCapriChecks(output, checks);
                             VoiceSwitchChecks(output, checks);
                             GamingChecks(output, checks);
+                            Link.Checks(output, checks);
                             checks.Add("LIMIT handler-driven integration test; physical mouse input and tray UI require a manual check");
                             checks.Add("PASS quit menu requested application exit");
                             File.WriteAllLines(Path.Combine(output, "smoke-test.txt"), checks);

@@ -168,12 +168,26 @@ class Prefs(context: Context) {
     // What she shows when they ask for their emergency info (only what they type here, kept on the phone).
     var emergencyInfo: String get() = s("emergencyInfo", ""); set(v) = put("emergencyInfo", v)
 
-    // CAPRI SYNC: the PC's address on their Wi-Fi and the key both sides got when they paired.
-    var syncAddress: String get() = s("syncAddress", ""); set(v) = put("syncAddress", v)
-    var syncKey: String? get() = secrets.get("syncKey"); set(v) = secrets.put("syncKey", v)
-    var syncPcName: String get() = s("syncPcName", ""); set(v) = put("syncPcName", v)
-    var syncedAt: Long get() = sp.getLong("syncedAt", 0L); set(v) = put("syncedAt", v)
+    // CAPRI LINK: the PC this phone is paired with (Capri Desktop 2.x), where it was last found on their network, and the
+    // key both sides made at pairing (kept encrypted with the phone's Keystore, like her API keys).
+    var linkAddress: String get() = s("linkAddress", ""); set(v) = put("linkAddress", v)
+    var linkKey: String? get() = secrets.get("linkKey"); set(v) = secrets.put("linkKey", v)
+    var linkPcId: String get() = s("linkPcId", ""); set(v) = put("linkPcId", v)
+    var linkPcName: String get() = s("linkPcName", ""); set(v) = put("linkPcName", v)
+    var linkSyncedAt: Long get() = sp.getLong("linkSyncedAt", 0L); set(v) = put("linkSyncedAt", v)
+    var linkRev: String get() = s("linkRev", ""); set(v) = put("linkRev", v)
+    var linkStatus: String get() = s("linkStatus", ""); set(v) = put("linkStatus", v)
+    // Off: she syncs only when they ask.
+    var linkAuto: Boolean get() = b("linkAuto", true); set(v) = put("linkAuto", v)
+    // This phone's id for its PC, made once.
     val syncPhoneId: String get() = s("syncPhoneId", "").ifEmpty { java.util.UUID.randomUUID().toString().also { put("syncPhoneId", it) } }
+
+    // Capri Sync v1 (the small program in pc-sync) used another lock: its pairing can't open Capri Link, so it goes.
+    fun dropSyncV1() {
+        if (!sp.contains("syncAddress") && !secrets.has("syncKey")) return
+        secrets.put("syncKey", null)
+        sp.edit().remove("syncAddress").remove("syncPcName").remove("syncedAt").apply()
+    }
 
     // Her watches (battery, Wi-Fi, a notification), as JSON.
     var watches: String get() = s("watches", "[]"); set(v) = put("watches", v)
