@@ -27,16 +27,22 @@
 
 ## 3. Envoyer le code sur GitHub (5 min)
 
-1. Dézippe `capri-ecosysteme-2.0.0.zip` dans tes Documents. Tu obtiens le dossier `capri` (il contient un dossier caché `.git` : c'est tout l'historique, ne le supprime pas).
-2. Dans PowerShell :
+1. Ouvre PowerShell **normalement** (touche Windows, tape « PowerShell », un simple clic, **pas** « Exécuter en tant qu'administrateur »). L'invite doit montrer `PS C:\Users\<toi>>`, pas `C:\WINDOWS\System32`.
+2. Colle ce bloc. Il trouve `capri-ecosysteme-2.0.0.zip` (dans Téléchargements, Documents ou le Bureau), le décompresse dans tes **vrais** Documents (même s'ils sont dans OneDrive) et entre dans le dossier `capri`. La décompression prend une à deux minutes.
    ```powershell
-   cd $HOME\Documents\capri
+   $docs = [Environment]::GetFolderPath('MyDocuments')
+   $zip = Get-ChildItem "$HOME\Downloads", $docs, ([Environment]::GetFolderPath('Desktop')) -Filter "capri-ecosysteme*.zip" -ErrorAction SilentlyContinue | Select-Object -First 1
+   if ($zip) { Expand-Archive -LiteralPath $zip.FullName -DestinationPath $docs -Force; Set-Location (Join-Path $docs 'capri'); git config core.filemode false; git config core.ignorecase true; git status } else { "Zip introuvable : cherche où il a été enregistré." }
+   ```
+   Tu dois voir `On branch development` et `nothing to commit, working tree clean`. Le dossier `capri` contient un dossier `.git` : c'est tout l'historique, ne le supprime pas.
+3. Vérifie que **https://github.com/kenikorb28/capri** existe (étape 2), puis, toujours dans le dossier `capri` :
+   ```powershell
    git remote add origin https://github.com/kenikorb28/capri.git
    git push -u origin development
    git push origin stable android feature/capri-link
    git push origin --tags
    ```
-3. Au premier `push`, une fenêtre **« Connect to GitHub »** s'ouvre : choisis *Sign in with your browser* et accepte. Git s'en souviendra.
+4. Au premier `push`, une fenêtre **« Connect to GitHub »** s'ouvre : choisis *Sign in with your browser* et accepte. Git s'en souviendra.
 
 `development` est la branche principale de l'écosystème (la première envoyée, donc celle que GitHub affiche par défaut). `stable` garde les versions d'origine intactes.
 
