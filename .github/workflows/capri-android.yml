@@ -1,0 +1,67 @@
+# Capri Android: runs her engine's tests (Capri Link included, against the shared vector in contract/), builds the debug
+# APK, and a release APK signed with your own key when that key is in the repository's secrets (see docs/OUTILS.md).
+# Download the result from the run's "Artifacts".
+name: Capri Android
+
+on:
+  push:
+    paths: ["android/**", "contract/**", "VERSION", ".github/workflows/capri-android.yml"]
+  pull_request:
+    paths: ["android/**", "contract/**", "VERSION"]
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HAS_KEY: ${{ secrets.CAPRI_KEYSTORE_B64 != '' }}
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Test and build the debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :core:test :app:testDebugUnitTest :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capri-android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+      - name: Release APK signed with your key
+        if: env.HAS_KEY == 'true'
+        env:
+          CAPRI_KEYSTORE_B64: ${{ secrets.CAPRI_KEYSTORE_B64 }}
+          CAPRI_KEYSTORE_PASSWORD: ${{ secrets.CAPRI_KEYSTORE_PASSWORD }}
+          CAPRI_KEY_ALIAS: ${{ secrets.CAPRI_KEY_ALIAS }}
+          CAPRI_KEY_PASSWORD: ${{ secrets.CAPRI_KEY_PASSWORD }}
+        run: |
+          echo "$CAPRI_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/capri.jks"
+          export CAPRI_KEYSTORE="$RUNNER_TEMP/capri.jks"
+          ./gradlew --no-daemon :app:assembleRelease
+          rm -f "$RUNNER_TEMP/capri.jks"
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          name: capri-android-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: android-test-reports
+          path: |
+            android/core/build/reports/tests
+            android/app/build/reports/tests

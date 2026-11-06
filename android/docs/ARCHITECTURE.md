@@ -6,7 +6,7 @@
 CapriDesktop   ← ton projet 0.8.2, inchangé (Windows, C#)
 CapriCore      ← core/   : le moteur en Kotlin pur (JVM), sans aucune classe Android, testé sur PC
 CapriAndroid   ← app/    : l'app Android (bulle, voix, écran, mains, réglages)
-Capri Sync     ← pc-sync/: petit programme Windows séparé (C# 5, csc.exe) pour la synchro en Wi-Fi
+Capri Link     ← le serveur est dans Capri Desktop (desktop/app/Link.cs) ; pc-sync/ (Capri Sync v1) n'est plus utilisé
 ```
 
 Pourquoi Kotlin natif plutôt que .NET MAUI : le code PC mélange C# 5, WinForms et Win32 ; MAUI ajouterait 30 à 40 Mo de runtime Mono, une chaîne de compilation plus lourde, et ne réutiliserait presque rien des parties Windows. Le moteur (cerveau, mémoire, sécurité, rappels, nettoyage) a été porté ligne à ligne en Kotlin et se teste sans téléphone.
@@ -44,7 +44,7 @@ CapriApp ─► Capri (engine/Capri.kt) : un seul cerveau, une seule mémoire, p
   ├─ WakeListener : « Hey Capri » dans le service au premier plan (type micro)
   ├─ NoticeBox    : notifications du jour, en mémoire uniquement
   ├─ Watches      : batterie, Wi-Fi, notification de quelqu'un
-  └─ SyncHub      : Capri Sync côté téléphone
+  └─ SyncHub      : Capri Link côté téléphone (core/link : client, fusion, MemorySync ; sync/LinkJob : toutes les 15 min)
 
 overlay/  OverlayService (FGS specialUse|microphone) ─ BubbleView ─ PanelView (menu 2.0) ─ GamingHud
 screen/   CapriAccessibility (lire, toucher, capturer) ─ Capture (MediaProjection) ─ PhoneAgent (« Fais-le »)

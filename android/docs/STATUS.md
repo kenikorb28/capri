@@ -4,7 +4,7 @@ Règle suivie : une fonction n'est dite « terminée » que si elle est **implé
 
 - **T** = implémenté et **testé** automatiquement (le vrai code exécuté, sur la JVM) ;
 - **C** = implémenté, **compilé** contre l'API Android 36, **pas encore exécuté sur un téléphone** ;
-- **N** = écrit, **non compilé ici** (C# de Capri Sync ; auto-test fourni pour ton PC) ;
+- **N** = écrit, **non compilé ici** (le C# de Capri Desktop ; le workflow GitHub *Capri Desktop* le compile et le teste) ;
 - **~** = partiel ou dépend du téléphone ; **✗** = impossible ou volontairement non fait.
 
 Rien de ce tableau n'est un bouton factice : chaque ligne C a son code réel dans `app/`.
@@ -115,8 +115,9 @@ Rien de ce tableau n'est un bouton factice : chaque ligne C a son code réel dan
 | Capri Sécurité : tableau 🟢🟡🔴, chaque porte expliquée et coupable, guide « Optimiser Capri sur TECNO » | C |
 | Clés API chiffrées (Keystore), jamais en clair ni dans les journaux, jamais en http vers internet | T (Redact, safeForKey) / C |
 | CAPRI URGENCE (désactivée par défaut) : appeler, envoyer sa position par SMS, infos importantes ; toujours confirmé | C |
-| Capri Sync côté téléphone (appairage, chiffrement, conversations, mémoire, projets, fichiers dans les deux sens) | T (appairage, chiffrement, fusion contre un faux PC) / C |
-| Capri Sync côté PC (`CapriSync.exe`) | N — auto-test `--selftest` avec le même vecteur que le téléphone |
+| Capri Link côté téléphone : appairage ECDH + code, fusion à trois voies de toute la mémoire, synchro automatique (après chaque changement, avant de répondre, en direct bulle ouverte, toutes les 15 min), passage de conversation, fichiers dans les deux sens | T (moteur : vecteur partagé, fusion, un faux PC qui suit le contrat) / app (`sync/`) : vérifiée contre une imitation de l'API Android ici, vraie compilation par le workflow *Capri Android* |
+| Capri Link côté PC (dans Capri Desktop 2.0, `desktop/app/Link.cs`) | N — le test automatique de Capri Desktop contient le vecteur partagé et un vrai appairage + une vraie synchro en local |
+| Capri Sync v1 (`pc-sync/CapriSync.exe`) | remplacé par Capri Link, plus utilisé |
 
 ## Non faits ou impossibles
 
