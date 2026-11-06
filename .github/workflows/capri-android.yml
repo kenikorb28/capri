@@ -1,6 +1,6 @@
 # Capri Android: runs her engine's tests (Capri Link included, against the shared vector in contract/), builds the debug
 # APK, and a release APK signed with your own key when that key is in the repository's secrets (see docs/OUTILS.md).
-# Download the result from the run's "Artifacts".
+# Download the result from the run's "Artifacts". Gradle's downloads are kept between runs to save minutes.
 name: Capri Android
 
 on:
@@ -27,11 +27,12 @@ jobs:
       run:
         working-directory: android
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
       - uses: android-actions/setup-android@v3
       - name: Test and build the debug APK
         run: |

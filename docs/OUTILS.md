@@ -48,15 +48,27 @@
 
 ## 4. Laisser GitHub compiler
 
-1. Sur la page de ton dépôt, onglet **Actions**. Deux workflows démarrent tout seuls après le push :
+1. Sur la page de ton dépôt, onglet **Actions**. Deux workflows démarrent tout seuls à chaque push qui touche leur partie (`desktop/` ou `android/`, `contract/`, `VERSION`, ou leur propre fichier de workflow) :
    - **Capri Desktop** : compile `Capri.exe` et `Capri-Setup.exe` sur Windows et lance tout le test automatique de Capri (Capri Link compris). Compte 15 à 25 minutes.
    - **Capri Android** : lance les tests du moteur et compile l'APK. Compte environ 10 minutes.
+
+   **Dépôt tout neuf :** le tout premier push ne les démarre pas toujours. L'onglet affiche alors *No workflows found* et *There are no workflow runs yet*. C'est normal : un workflow n'apparaît qu'après son premier lancement, qui se fera au push suivant touchant ses fichiers (par exemple ta première mise à jour, voir plus bas). Ensuite, tu peux aussi les relancer à la main : *Actions* > le workflow > *Run workflow*.
 2. Quand une exécution est verte ✅, clique dessus : en bas, section **Artifacts**, télécharge :
    - `capri-desktop-windows` → un zip avec `Capri-Setup.exe` et `Capri.exe` ;
    - `capri-android-debug-apk` (ou `capri-android-release-apk` si tu as fait l'étape 6.3).
-3. Si une exécution est rouge ❌ : clique sur le travail en rouge, puis sur l'étape en rouge, et copie-moi les dernières lignes. Pour Desktop, télécharge aussi l'artefact `smoke-windows` : il contient le rapport complet du test (`smoke-test.txt` et éventuellement `failure.txt`). C'est probable à la toute première compilation de Capri Link côté PC (voir README) : envoie-moi ça et je corrige.
+3. Si une exécution est rouge ❌ : ouvre-la, clique sur **⋯** en haut à droite > **Download log archive**, et envoie-moi le zip (à défaut, une capture d'écran de l'étape en rouge). Pour Desktop, télécharge aussi l'artefact `smoke-windows` : il contient le rapport complet du test (`smoke-test.txt` et éventuellement `failure.txt`). C'est probable à la toute première compilation de Capri Link côté PC (voir README) : envoie-moi ça et je corrige.
 
-**Minutes gratuites :** un dépôt privé a 2 000 minutes d'Actions gratuites par mois, et GitHub compte une minute Windows comme deux. Une compilation Desktop coûte donc environ 40 minutes, Android environ 10. Le test Mac compte dix fois plus : il ne tourne que si tu le lances toi-même (*Actions* > *Capri Desktop* > *Run workflow*). Un dépôt public n'a pas de limite de minutes, mais tout le monde peut alors lire le code.
+**Minutes gratuites :** un dépôt privé a 2 000 minutes d'Actions gratuites par mois, et GitHub compte une minute Windows comme deux. Une compilation Desktop coûte donc environ 40 minutes, Android environ 10. Le test Mac compte dix fois plus : il ne tourne que si tu le demandes (*Actions* > *Capri Desktop* > *Run workflow*, case *Aussi le test Mac*). Un dépôt public n'a pas de limite de minutes, mais tout le monde peut alors lire le code.
+
+### Recevoir une mise à jour préparée par Claude (fichier `.bundle`)
+
+Quand je t'envoie un fichier comme `capri-maj-1.bundle`, enregistre-le dans Téléchargements, puis colle ce bloc dans PowerShell (pas en administrateur), en remplaçant le nom du fichier si besoin :
+```powershell
+Set-Location (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'capri')
+$b = Get-ChildItem "$HOME\Downloads", ([Environment]::GetFolderPath('Desktop')), ([Environment]::GetFolderPath('MyDocuments')) -Filter "capri-maj-1.bundle" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($b) { git switch development; git pull $b.FullName development; git push } else { "Fichier introuvable : regarde où il a été enregistré." }
+```
+`git pull` doit afficher *Fast-forward*, puis `git push` envoie la mise à jour : les compilations concernées démarrent toutes seules dans *Actions*.
 
 ## 5. Installer Capri Desktop 2.0 sur le PC
 

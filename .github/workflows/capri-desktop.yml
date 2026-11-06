@@ -1,5 +1,5 @@
 # Capri Desktop: builds Capri.exe and Capri-Setup.exe on GitHub's Windows machines and runs her whole smoke test
-# (Capri Link included), then the Mac and Linux port. Download the result from the run's "Artifacts".
+# (Capri Link included), then the Linux port, and the Mac port when you ask for it. Download the result from the run's "Artifacts".
 name: Capri Desktop
 
 on:
@@ -9,6 +9,11 @@ on:
   pull_request:
     paths: ["desktop/**", "contract/**", "VERSION"]
   workflow_dispatch:
+    inputs:
+      mac:
+        description: "Aussi le test Mac (sur un dépôt privé, GitHub compte chaque minute Mac pour dix)"
+        type: boolean
+        default: false
 
 concurrency:
   group: desktop-${{ github.ref }}
@@ -72,10 +77,10 @@ jobs:
           name: smoke-linux
           path: desktop/smoke
 
-  # GitHub counts a Mac minute as ten on a private repository's free minutes: the Mac check runs when you start it by hand
-  # (Actions > Capri Desktop > Run workflow).
+  # GitHub counts a Mac minute as ten on a private repository's free minutes: the Mac check only runs when you start the
+  # workflow by hand and tick its box (Actions > Capri Desktop > Run workflow > "Aussi le test Mac").
   mac:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.mac
     runs-on: macos-15
     timeout-minutes: 30
     defaults:
