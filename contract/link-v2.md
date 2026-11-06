@@ -17,7 +17,7 @@ Implémentations : `desktop/app/Link.cs` (PC) et `android/core/src/main/kotlin/c
 Le téléphone envoie l'octet-texte ASCII `CAPRI-LINK?` en diffusion (adresse de diffusion du sous-réseau et `255.255.255.255`) et écoute 1,5 s. Chaque PC répond, à l'adresse d'où vient la question et seulement si elle est privée :
 
 ```json
-{"app":"Capri Link","link":2,"id":"pc-3f9a…","name":"DESKTOP-KENNY","pairing":true,"port":47917}
+{"app":"Capri Link","link":2,"id":"pc-3f9a…","name":"DESKTOP-CAPRI","pairing":true,"port":47917}
 ```
 
 La découverte est un confort : taper l'adresse IP du PC (affichée dans sa fenêtre Capri Link) marche aussi. Si le PC change d'adresse, le téléphone le retrouve par son `id`.
@@ -25,7 +25,7 @@ La découverte est un confort : taper l'adresse IP du PC (affichée dans sa fen�
 ## 3. `GET /hello`
 
 ```json
-{"app":"Capri Link","link":2,"version":"2.0.0","name":"DESKTOP-KENNY","id":"pc-3f9a…","pairing":true,
+{"app":"Capri Link","link":2,"version":"2.0.0","name":"DESKTOP-CAPRI","id":"pc-3f9a…","pairing":true,
  "salt":"<16 octets en hex>","pub":"<clé publique du PC, base64>"}
 ```
 

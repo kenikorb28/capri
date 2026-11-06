@@ -82,11 +82,11 @@ class LinkTest {
 
     @Test fun aLabelledLineKeepsOneValue() {
         val head = "# h\n"
-        val base = head + "- Pronouns: he/him\n- Name: Kenny\n"
-        val pc = head + "- Pronouns: they/them\n- Name: Kenny\n"
-        val phone = head + "- Pronouns: he/him\n- Name: Kenny\n"
+        val base = head + "- Pronouns: he/him\n- Name: Sam\n"
+        val pc = head + "- Pronouns: they/them\n- Name: Sam\n"
+        val phone = head + "- Pronouns: he/him\n- Name: Sam\n"
         assertEquals(pc, Merge.notes(base, phone, pc))
-        val both = Merge.notes(base, head + "- Pronouns: she/her\n- Name: Kenny\n", pc, mineIsNewer = true)
+        val both = Merge.notes(base, head + "- Pronouns: she/her\n- Name: Sam\n", pc, mineIsNewer = true)
         assertTrue(both.contains("she/her") && !both.contains("they/them") && !both.contains("he/him"))
     }
 
