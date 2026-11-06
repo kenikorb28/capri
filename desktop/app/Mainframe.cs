@@ -2642,7 +2642,7 @@ namespace CapriDesktop
         }
 
         // Windows Forms holds a window within the largest size the screen can track, so on a screen too small for her zoom
-        // her window ends up narrower than her layout: GitHub's 1024x768 runner (about 1036 px at most) at 150% and 200%,
+        // her window ends up narrower than her layout: GitHub's 1024x768 runner (1044 px at most there) at 150% and 200%,
         // where Settings needs 1140 and 1520. Then what lies past the window's edge is the screen's limit, not an overlap in
         // her layout. Null when her window has the width her layout asked for.
         internal string CutByScreen
