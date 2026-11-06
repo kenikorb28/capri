@@ -2641,6 +2641,21 @@ namespace CapriDesktop
             return null;
         }
 
+        // Windows Forms holds a window within the largest size the screen can track, so on a screen too small for her zoom
+        // her window ends up narrower than her layout: GitHub's 1024x768 runner (about 1036 px at most) at 150% and 200%,
+        // where Settings needs 1140 and 1520. Then what lies past the window's edge is the screen's limit, not an overlap in
+        // her layout. Null when her window has the width her layout asked for.
+        internal string CutByScreen
+        {
+            get
+            {
+                int wanted = Scaled(paged ? Wide + Column : Wide);
+                if (ClientSize.Width >= wanted - 1) return null;
+                Rectangle screen = Screen.FromControl(this).Bounds;
+                return "her window is " + ClientSize.Width + " px wide on a " + screen.Width + "x" + screen.Height + " screen, and her layout needs " + wanted;
+            }
+        }
+
         // The whole settings page, scrolled or not, in the window's own px.
         private Rectangle PageArea { get { return paged ? new Rectangle(0, -Scaled(pageScroll), ClientSize.Width, Math.Max(ClientSize.Height, Scaled(PageNow))) : ClientRectangle; } }
 

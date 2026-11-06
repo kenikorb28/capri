@@ -20,7 +20,8 @@
 ### Capri Desktop
 - `app/Link.cs` : le serveur Capri Link, la fenêtre **Capri Link…** (téléphones, code, fichiers, journal), clés protégées par DPAPI, sauvegarde du jour avant chaque modification, vérifications dans le test automatique (vecteur + vrai appairage et vraie synchro en local).
 - `Brain.cs` : verrous partagés avec Capri Link, ce que tu faisais sur le téléphone (et tes projets) dans son prompt, `memories.md` jamais réécrit s'il a changé pendant qu'elle le résumait, heure de la dernière ligne.
-- `Capri.cs` : Capri Link démarre si un téléphone est appairé, menu *Capri Link…*, arrêt propre.
+- `Capri.cs` : Capri Link démarre si un téléphone est appairé, menu *Capri Link…*, arrêt propre. Le test du menu court du clic droit attend maintenant cette ligne entre *Hologram* et *Help*.
+- Test automatique, première compilation sur GitHub : 597 vérifications réussies, dont les trois de Capri Link (vecteur commun, ECDH P-256 sous Windows, vrai appairage et vraie synchro en local). Deux vérifications de mise en page (réglages à 150 % et 200 %) échouaient pour une raison technique : la machine Windows de GitHub a un écran virtuel de 1024×768, et Windows Forms limite une fenêtre à environ 1036 px de large, alors que les réglages en demandent 1140 à 150 % et 1520 à 200 %. Quand l'écran coupe ainsi la fenêtre (`Mainframe.CutByScreen`), ces deux vérifications ne contrôlent plus ce qui dépasse du bord, le disent dans une ligne LIMIT, et vérifient toujours les chevauchements et le texte. Sur un vrai PC assez grand, rien ne change.
 - Canal de mise à jour : **ton dépôt `kenikorb28/capri`** au lieu du projet d'origine (décision n° 6), pour qu'une version d'origine ne remplace jamais l'écosystème. Les packs de voix restent téléchargés depuis le projet d'origine.
 
 ### Capri Android

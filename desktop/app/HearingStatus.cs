@@ -709,6 +709,8 @@ namespace CapriDesktop
                 hearingSpeechProblem = hearingCaptureProblem = null;
                 ResetHearingSignal();
                 mainframe.VoiceNote("", false);
+                List<string> cutAt = new List<string>();
+                string firstCut = null;
                 foreach (int dpi in new[] { 96, 144, 192 })
                 {
                     mainframe.LayoutScale(dpi, 100);
@@ -717,7 +719,15 @@ namespace CapriDesktop
                         preferences.AdvancedSettings = advanced;
                         simpleTest = !advanced;
                         mainframe.ShowSettings(true);
-                        string overlap = mainframe.Overlap(), outside = mainframe.Outside(), text = mainframe.TextFits();
+                        // On a screen too small for this scale Windows holds her window narrower than her layout, so what lies
+                        // past its edge is the screen's limit and isn't checked there; overlaps and text still are.
+                        string cut = mainframe.CutByScreen;
+                        if (cut != null)
+                        {
+                            if (firstCut == null) firstCut = cut;
+                            if (!cutAt.Contains(dpi + " dpi")) cutAt.Add(dpi + " dpi");
+                        }
+                        string overlap = mainframe.Overlap(), outside = cut != null ? null : mainframe.Outside(), text = mainframe.TextFits();
                         if (overlap != null || outside != null || text != null || !mainframe.HearingChoiceFits)
                             throw new Exception("Hearing layout " + dpi + " dpi, " + (advanced ? "Advanced" : "Simple") + ": overlap " + overlap + "; outside " + outside + "; text " + text + ".");
                         mainframe.ShowSettings(false);
@@ -742,7 +752,9 @@ namespace CapriDesktop
                     if (facts == null || facts.IndexOf("Hearing", StringComparison.OrdinalIgnoreCase) < 0 && facts.IndexOf("hearing line", StringComparison.Ordinal) < 0) throw new Exception("Hearing help didn't match: " + ask);
                     if (facts.IndexOf('\u2014') >= 0) throw new Exception("Hearing help has an em dash.");
                 }
-                checks.Add("PASS hearing controls, labels and buttons fit at 100%, 150% and 200%, in Simple and Advanced Settings; new controls are accessible, no rows overlap, help matches the three support questions, and eight previews show working, no mic, blocked and silent at 100% and 150%");
+                checks.Add("PASS hearing controls, labels and buttons fit at 100%, 150% and 200%, in Simple and Advanced Settings" + (cutAt.Count > 0 ? " (inside the window this screen allows, see the LIMIT below)" : "") + "; new controls are accessible, no rows overlap, help matches the three support questions, and eight previews show working, no mic, blocked and silent at 100% and 150%");
+                if (cutAt.Count > 0)
+                    checks.Add("LIMIT hearing layout at " + string.Join(" and ", cutAt.ToArray()) + ": " + firstCut + ", so Windows held her window narrower and what lies past its edge wasn't checked there; overlaps, text and the hearing choice still were. A screen big enough for that scale shows the whole page");
             }
             finally
             {
