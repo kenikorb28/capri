@@ -73,9 +73,11 @@ class LinkTest {
         val pc = head + "- Prefers the evening\n- Their Android project is called Capri\n"
         val phone = head + "- Loves coffee\n- Prefers the evening\n- Loves tea\n"
         val merged = Merge.notes(base, phone, pc)
-        assertEquals(head + "- Prefers the evening\n- Loves tea\n- Their Android project is called Capri\n", merged)
-        assertEquals("before the first sync, both sides' lines are kept, once", head + "- Loves coffee\n- Prefers the evening\n- Loves tea\n- Their Android project is called Capri\n", Merge.notes(null, phone, pc))
-        assertEquals("the same note written differently counts once", head + "- Loves Tea\n", Merge.notes(null, head + "- Loves Tea\n", head + "-  loves  tea\n"))
+        assertEquals(head + "- Prefers the evening\n- Their Android project is called Capri\n- Loves tea\n", merged)
+        assertEquals("before the first sync, both sides' lines are kept, once", head + "- Prefers the evening\n- Their Android project is called Capri\n- Loves coffee\n- Loves tea\n", Merge.notes(null, phone, pc))
+        assertEquals("the same note written differently counts once", head + "-  loves  tea\n", Merge.notes(null, head + "- Loves Tea\n", head + "-  loves  tea\n"))
+        assertEquals("nothing to change: the PC's file comes back exactly as it was", pc, Merge.notes(pc, pc.replace("\n\n", "\n"), pc))
+        assertEquals("with no file on the PC yet, the phone's goes over", head + "- Loves tea\n", Merge.notes(null, head + "- Loves tea\n", ""))
     }
 
     @Test fun aLabelledLineKeepsOneValue() {
@@ -83,9 +85,43 @@ class LinkTest {
         val base = head + "- Pronouns: he/him\n- Name: Kenny\n"
         val pc = head + "- Pronouns: they/them\n- Name: Kenny\n"
         val phone = head + "- Pronouns: he/him\n- Name: Kenny\n"
-        assertEquals(head + "\n- Name: Kenny\n- Pronouns: they/them\n", Merge.notes(base, phone, pc))
+        assertEquals(pc, Merge.notes(base, phone, pc))
         val both = Merge.notes(base, head + "- Pronouns: she/her\n- Name: Kenny\n", pc, mineIsNewer = true)
         assertTrue(both.contains("she/her") && !both.contains("they/them") && !both.contains("he/him"))
+    }
+
+    @Test fun anObsidianNoteKeepsItsShape() {
+        val vault = "# Moi\nCe que Capri sait de moi.\n\n## Jeux\n- Joue à Free Fire\n\n## Projets\n- Capri sur PC et Android\n\nÀ relire le dimanche.\n"
+        val base = vault
+        val phone = Memory.NotesHead + "Ce que Capri sait de moi.\n- Joue à Free Fire\n- Capri sur PC et Android\n- Aime le thé\nÀ relire le dimanche.\n"
+        val merged = Merge.notes(base, phone, vault)
+        assertEquals(vault.trimEnd() + "\n- Aime le thé\n", merged)
+        val forgot = Merge.notes(merged, merged.replace("- Joue à Free Fire\n", ""), merged)
+        assertEquals(merged.replace("- Joue à Free Fire\n", ""), forgot)
+    }
+
+    @Test fun personalityTravelsInThePcsWordsAndADefaultNeverWins() {
+        val s = Setup()
+        try {
+            val phoneHome = "Now you live inside the user's phone."
+            val pcHome = "Now you live inside the user's computer."
+            s.sync.personalityToWire = { it.replace(phoneHome, pcHome) }
+            s.sync.personalityFromWire = { it.replace(pcHome, phoneHome) }
+            s.sync.personalityIsDefault = { it.contains("DEFAULT") }
+            val mine = File(s.phoneFolder, "personality.md")
+            s.sync.personality = mine
+            mine.writeText("DEFAULT " + phoneHome + "\n")
+            s.pc.personality.writeText("# Capri\nShe teases them. " + pcHome + "\n")
+            s.sync.sync(s.link)
+            assertEquals("their own personality on the PC replaced her default here, in the phone's words", "# Capri\nShe teases them. " + phoneHome + "\n", mine.readText())
+            mine.writeText("# Capri\nShe teases them a lot. " + phoneHome + "\n")
+            s.sync.sync(s.link)
+            assertEquals("# Capri\nShe teases them a lot. " + pcHome + "\n", s.pc.personality.readText())
+            s.pc.personality.delete()
+            s.sync.sync(s.link)
+            assertFalse("reset on the PC: her default here too", mine.exists())
+            assertTrue(File(s.phoneFolder, "personality.backup.md").readText().contains("a lot"))
+        } finally { s.close() }
     }
 
     @Test fun memoriesMergeByDayInEitherLanguage() {

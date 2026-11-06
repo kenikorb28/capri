@@ -19,3 +19,8 @@ kotlin {
 dependencies {
     testImplementation("junit:junit:4.13.2")
 }
+
+// The shared Capri Link test vector lives at the root of the Capri repository, beside android/ and desktop/.
+tasks.test {
+    systemProperty("capri.contract", rootProject.file("../contract").absolutePath)
+}

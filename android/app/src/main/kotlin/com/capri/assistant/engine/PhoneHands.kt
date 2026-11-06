@@ -67,7 +67,7 @@ class PhoneHands(private val capri: Capri) : Hands {
         "use_phone", "phone_action" -> if (!CapriAccessibility.on()) Lang.pick("the accessibility service \"Capri — hands on the screen\" is off; Capri Security turns it on", "le service d'accessibilité « Capri — mains sur l'écran » est coupé ; Capri Sécurité permet de l'activer") else null
         "notifications" -> if (!NotificationWatcher.granted(app)) Lang.pick("notification access is off; Capri Security turns it on", "l'accès aux notifications est coupé ; Capri Sécurité permet de l'activer") else null
         "emergency" -> if (!capri.prefs.emergencyOn || capri.prefs.emergencyNumber.isBlank()) Lang.pick("the emergency button isn't set up (Settings > EMERGENCY)", "le bouton d'urgence n'est pas configuré (Réglages > URGENCE)") else null
-        "sync" -> if (capri.prefs.syncKey == null) Lang.pick("Capri Sync isn't paired with their PC yet (Settings > PC SYNC)", "Capri Sync n'est pas encore appairé avec ton PC (Réglages > SYNCHRO PC)") else null
+        "sync" -> if (!capri.sync.paired()) Lang.pick("Capri Link isn't paired with their PC yet (Settings > CAPRI LINK)", "Capri Link n'est pas encore appairé avec ton PC (Réglages > CAPRI LINK)") else null
         "gaming_panel" -> if (!Settings.canDrawOverlays(app)) Lang.pick("Capri isn't allowed to draw over other apps yet", "Capri n'a pas encore le droit de s'afficher par-dessus les autres apps") else null
         "web_search", "read_page" -> if (!DeviceInfo.online(app)) Lang.pick("there's no internet connection right now", "il n'y a pas de connexion internet en ce moment") else null
         else -> null

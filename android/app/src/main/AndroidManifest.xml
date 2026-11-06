@@ -209,6 +209,12 @@
                 android:value="A floating assistant bubble the user turns on, drawn over other apps with SYSTEM_ALERT_WINDOW and shown with a persistent notification. The microphone type is used only while the user talks to it." />
         </service>
 
+        <!-- Capri Link: one sync with their PC about every 15 minutes, through Android's own job scheduler. -->
+        <service
+            android:name=".sync.LinkJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <service
             android:name=".screen.ScreenCaptureService"
             android:exported="false"

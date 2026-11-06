@@ -15,8 +15,13 @@ class Synced(val here: Int, val there: Int, val linesIn: Int, val linesOut: Int,
 // files and takes the merged ones back, and only if they didn't change in between (checked by their SHA-256). The version of
 // each file at the last sync is kept here, per PC, so a line forgotten on one device is forgotten on the other.
 class MemorySync(private val memory: Memory, private val client: LinkClient, private val root: File) {
-    // personality.md: shared too, so she is the same Capri on both.
+    // personality.md: shared too, so she is the same Capri on both. It travels in the PC's words (Capri Desktop's lines about
+    // where she lives) and each device keeps its own; her untouched default on a device counts as no file, so it never takes
+    // the place of a personality they wrote on the other.
     @Volatile var personality: File? = null
+    @Volatile var personalityToWire: (String) -> String = { it }
+    @Volatile var personalityFromWire: (String) -> String = { it }
+    @Volatile var personalityIsDefault: (String) -> Boolean = { false }
     // What this phone is doing, sent with every sync; and what the PC was doing, as it last said.
     @Volatile var context: (() -> Map<String, Any?>)? = null
     @Volatile var theirContext: Map<String, Any?>? = null
@@ -107,11 +112,17 @@ class MemorySync(private val memory: Memory, private val client: LinkClient, pri
         val theirPersonality = pulled["personality"].obj()
         if (file != null && theirPersonality != null) {
             val theirText = theirPersonality["text"].str()
-            val mineText = if (file.exists()) file.readText() else null
+            val mineRaw = if (file.exists()) file.readText() else null
+            val mineText = mineRaw?.takeUnless { personalityIsDefault(it) }?.let { personalityToWire(it) }
             val whole = Merge.whole(base.read("personality.md"), mineText, theirText, file.lastModified() >= (theirPersonality["at"].num()?.toLong() ?: 0L))
             mergedPersonality = whole.text
-            if (whole.other != null) File(file.parentFile, "personality.other-device.md").writeText(whole.other)
-            if (whole.text != mineText) { if (whole.text == null) file.delete() else file.writeText(whole.text); here++ }
+            if (whole.other != null) File(file.parentFile, "personality.other-device.md").writeText(personalityFromWire(whole.other))
+            if (whole.text != mineText) {
+                // Back to her default, as Reset does: what they wrote here is kept as personality.backup.md.
+                if (whole.text == null) { if (mineRaw != null) { File(file.parentFile, "personality.backup.md").writeText(mineRaw); file.delete() } }
+                else file.writeText(personalityFromWire(whole.text))
+                here++
+            }
             if (whole.text != theirText) { push["personality"] = mapOf("text" to whole.text, "expect" to (theirPersonality["sha"].str() ?: "")); there++ }
         }
 

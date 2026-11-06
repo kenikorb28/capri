@@ -24,8 +24,30 @@ object Merge {
         val t = noteParts(theirs)
         val b = base?.let { noteParts(it) }
         val kept = oneOfEachLabel(items(b?.second, m.second, t.second), b?.second ?: emptyList(), m.second, t.second, mineIsNewer)
-        val head = m.first.ifBlank { t.first }.ifBlank { Memory.NotesHead.trimEnd() }
+        if (theirs.isNotBlank()) return patched(theirs, kept)
+        val head = m.first.ifBlank { Memory.NotesHead.trimEnd() }
         return head.trimEnd() + "\n\n" + kept.joinToString("") { it + "\n" }
+    }
+
+    // The other device's file with the notes both now drop taken out and the new ones added at its end. Everything else in
+    // it (its head, headings, blank lines) stays where it was, so a note in their Obsidian vault keeps its shape, and a file
+    // with nothing to change comes back exactly as it was.
+    private fun patched(theirs: String, kept: List<String>): String {
+        val want = LinkedHashMap<String, String>()
+        for (line in kept) want.putIfAbsent(key(line), line)
+        val out = ArrayList<String>()
+        val placed = HashSet<String>()
+        var dropped = false
+        for (raw in split(theirs)) {
+            val line = raw.trim()
+            if (line.isEmpty() || line.startsWith("#") || line.startsWith(">")) { out.add(raw); continue }
+            val k = key(line)
+            if (k in want && placed.add(k)) out.add(raw) else dropped = true
+        }
+        val added = want.filterKeys { it !in placed }.values
+        if (!dropped && added.isEmpty()) return theirs
+        while (out.isNotEmpty() && out.last().isBlank()) out.removeAt(out.size - 1)
+        return (out + added).joinToString("\n") + "\n"
     }
 
     private fun noteParts(text: String): Pair<String, List<String>> {

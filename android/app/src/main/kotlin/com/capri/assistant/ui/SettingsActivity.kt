@@ -16,7 +16,7 @@ import com.capri.core.keyTail
 import java.io.File
 
 // Her settings, laid out like the desktop's Mainframe: BRAIN, VOICE, EARS, HEY CAPRI, MODES, POWER, BUBBLE,
-// NOTIFICATIONS, EMERGENCY, PC SYNC, YOU and SECURITY. Every switch takes effect at once.
+// NOTIFICATIONS, EMERGENCY, CAPRI LINK, YOU and SECURITY. Every switch takes effect at once.
 class SettingsActivity : NeonActivity() {
     private lateinit var f: Form
     private val prefs get() = capri.prefs
@@ -209,12 +209,26 @@ class SettingsActivity : NeonActivity() {
     }
 
     private fun sync() {
-        f.section(Lang.pick("PC SYNC", "SYNCHRO PC"), if (capri.sync.paired()) prefs.syncPcName else Lang.pick("not paired", "non appairé"))
-        f.note(Lang.pick("Open Capri Sync on your PC (in this project's pc-sync folder), on the same Wi-Fi, then enter its address and the code it shows. Everything is encrypted with the key you get at pairing.",
-            "Ouvre Capri Sync sur ton PC (dossier pc-sync du projet), sur le même Wi-Fi, puis entre son adresse et le code qu'il affiche. Tout est chiffré avec la clé obtenue à l'appairage."))
-        val address = f.field(Lang.pick("PC address", "Adresse du PC"), "192.168.1.20", prefs.syncAddress.removePrefix("http://").substringBefore(":47917"), action = "OK") { prefs.syncAddress = it }
-        f.field(Lang.pick("Pairing code", "Code d'appairage"), "ABCD-1234", "", action = Lang.pick("Pair", "Appairer")) { code -> val a = address.text.toString().trim(); bg { capri.sync.pair(a, code) } }
-        if (capri.sync.paired()) f.buttons(Lang.pick("Test", "Tester") to { bg { capri.sync.run("status") } }, Lang.pick("Sync memory", "Synchroniser la mémoire") to { bg { capri.sync.run("sync_memory") } }, Lang.pick("Forget PC", "Oublier le PC") to { capri.sync.unpair(); build() })
+        val link = capri.sync
+        f.section("CAPRI LINK", if (link.paired()) prefs.linkPcName else Lang.pick("not paired", "non appairé"))
+        f.note(Lang.pick("The same Capri, with the same memory, on this phone and in Capri Desktop on your PC: notes, memories, projects, personality and chat logs. On the PC, open her menu (her icon by the clock) > Capri Link… > Add a phone, then type the code here. Your own Wi-Fi or Tailscale only, everything encrypted.",
+            "La même Capri, avec la même mémoire, sur ce téléphone et dans Capri Desktop sur ton PC : notes, souvenirs, projets, personnalité et journaux. Sur le PC, ouvre son menu (son icône près de l'horloge) > Capri Link… > Ajouter un téléphone, puis tape le code ici. Ton Wi-Fi ou Tailscale uniquement, tout est chiffré."))
+        if (link.paired()) {
+            f.note(link.state())
+            f.toggle(Lang.pick("Sync by herself", "Synchroniser toute seule"), prefs.linkAuto,
+                Lang.pick("After each change, before answering when it's been a while, and about every 15 minutes.", "Après chaque changement, avant de répondre si ça fait un moment, et environ toutes les 15 minutes.")) { prefs.linkAuto = it; link.configure() }
+            f.buttons(Lang.pick("Sync now", "Synchroniser") to { bg { link.run("sync_memory") } }, Lang.pick("Test", "Tester") to { bg { link.run("status") } },
+                Lang.pick("Forget this PC", "Oublier ce PC") to { bg { link.unpair() } })
+        } else {
+            val address = f.field(Lang.pick("PC address (leave empty: she looks for it)", "Adresse du PC (vide : elle la cherche)"), "192.168.1.20", prefs.linkAddress.removePrefix("http://").substringBefore(":47917"), action = Lang.pick("Find", "Chercher")) { typed ->
+                if (typed.isNotBlank()) { prefs.linkAddress = typed.trim(); build() } else bg {
+                    val found = link.discover().firstOrNull()
+                    if (found == null) Lang.pick("No PC with Capri Link found on this Wi-Fi. Open Capri Link on the PC, or type the address it shows.", "Aucun PC avec Capri Link trouvé sur ce Wi-Fi. Ouvre Capri Link sur le PC, ou tape l'adresse qu'il affiche.")
+                    else { prefs.linkAddress = found.address; Lang.pick("Found ${found.name} at ${found.address}.", "Trouvé : ${found.name} à ${found.address}.") }
+                }
+            }
+            f.field(Lang.pick("Pairing code", "Code d'appairage"), "ABCD-EFGH", "", action = Lang.pick("Pair", "Associer")) { code -> val a = address.text.toString().trim(); bg { link.pair(a, code) } }
+        }
     }
 
     private fun you() {
