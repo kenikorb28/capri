@@ -37,8 +37,13 @@ class Mouth(private val capri: Capri) {
     private val barge = BargeIn(capri)
     private var focus: AudioFocusRequest? = null
     private var warned = false
+    // Set once a paid Fish Audio model was refused for lack of credit: her next lines go straight to the free one.
+    @Volatile private var fishFell = false
 
     val speaking: Boolean get() = done != null
+
+    // A test, or a changed voice setting, makes her say again what goes wrong instead of only the first time.
+    fun retell() { warned = false; fishFell = false }
 
     private fun locale(): Locale = when (capri.prefs.language) {
         "French" -> Locale.FRANCE; "English" -> Locale.US; "Spanish" -> Locale("es", "ES"); "German" -> Locale.GERMANY; "Portuguese" -> Locale("pt", "BR"); "Polish" -> Locale("pl", "PL"); "Italian" -> Locale.ITALY; else -> Locale.getDefault()
@@ -109,7 +114,7 @@ class Mouth(private val capri: Capri) {
                 capri.log("voice", kind + ": " + (e.message ?: "?"))
                 capri.main.post {
                     if (id != talk) return@post
-                    if (!warned) { warned = true; capri.line(Line.SYS, Lang.pick("My cloud voice failed (", "Ma voix cloud a échoué (") + (e.message ?: "?") + Lang.pick("), so I'm using the phone's voice.", "), j'utilise la voix du téléphone.")) }
+                    if (!warned) { warned = true; capri.line(Line.SYS, Lang.pick("My cloud voice failed: ", "Ma voix cloud a échoué : ") + (e.message ?: "?").trim().trimEnd('.') + Lang.pick(". I'm using the phone's voice.", ". J'utilise la voix du téléphone.")) }
                     system(words, id)
                 }
                 return@execute
@@ -155,8 +160,25 @@ class Mouth(private val capri: Capri) {
             }
             "fish" -> {
                 val key = p.fishKey ?: throw IllegalStateException(Lang.pick("no Fish Audio key", "pas de clé Fish Audio"))
-                val body = LinkedHashMap<String, Any?>().apply { put("text", words); if (p.fishVoice.isNotBlank()) put("reference_id", p.fishVoice.substringAfterLast('/')); put("format", "mp3") }
-                return check(http.request("POST", "https://api.fish.audio/v1/tts", mapOf("Authorization" to "Bearer $key", "Content-Type" to "application/json", "model" to p.fishModel.ifEmpty { "s2.1-pro-free" }), Json.write(body).toByteArray(), 60000))
+                // The request is built by her engine (core/Fish.kt): the same call on every device, and the one her tests send.
+                fun ask(model: String): com.capri.core.HttpReply {
+                    val call = com.capri.core.Fish.call(key, words, p.fishVoice, model, p.speed, p.power == "saver")
+                    return http.request("POST", call.url, call.headers, call.body, 60000)
+                }
+                var model = if (fishFell) com.capri.core.Fish.Free else com.capri.core.Fish.modelName(p.fishModel)
+                var r = ask(model)
+                // A paid model on an account with no credit shouldn't cost her her voice: the free one says the line, and she tells them once.
+                if (com.capri.core.Fish.retryFree(r.status, model)) {
+                    val paid = model
+                    model = com.capri.core.Fish.Free
+                    r = ask(model)
+                    if (r.status < 400 && !fishFell) {
+                        fishFell = true
+                        capri.main.post { capri.line(Line.SYS, Lang.pick("Fish Audio wants credit for $paid, so I'm speaking with its free model (${com.capri.core.Fish.Free}).", "Fish Audio demande du crédit pour $paid, alors je parle avec son modèle gratuit (${com.capri.core.Fish.Free}).")) }
+                    }
+                }
+                if (r.status >= 400) throw IllegalStateException(com.capri.core.Fish.problem(r.status, r.body, model, key))
+                return check(r)
             }
             else -> {
                 val base = p.speechUrl.trim().trimEnd('/').let { if (it.endsWith("/audio/speech")) it else if (Regex("/v\\d+$").containsMatchIn(it)) "$it/audio/speech" else "$it/v1/audio/speech" }

@@ -100,8 +100,10 @@ class SettingsActivity : NeonActivity() {
                 f.field("Voice ID", "ID", prefs.elevenVoice) { prefs.elevenVoice = it; build() }
             }
             "fish" -> {
-                f.field("Fish Audio (" + masked(prefs.fishKey) + ")", Lang.pick("key", "clé"), "", secret = true) { if (it.isNotEmpty()) { prefs.fishKey = it; build() } }
-                f.field(Lang.pick("Voice ID or link", "ID ou lien de voix"), "", prefs.fishVoice) { prefs.fishVoice = it; build() }
+                f.field("Fish Audio (" + masked(prefs.fishKey) + ")", Lang.pick("key", "clé"), "", secret = true) { val key = it.trim(); if (key.isNotEmpty()) { prefs.fishKey = key; capri.mouth.retell(); build() } }
+                f.field(Lang.pick("Voice ID or link", "ID ou lien de voix"), "", prefs.fishVoice) { prefs.fishVoice = it; capri.mouth.retell(); build() }
+                f.field(Lang.pick("Model", "Modèle"), com.capri.core.Fish.Known.joinToString(" · "), prefs.fishModel) { prefs.fishModel = com.capri.core.Fish.modelName(it); capri.mouth.retell(); build() }
+                f.note(Lang.pick(com.capri.core.Fish.Free + " is Fish Audio's free tier. Its other models need credit on your Fish Audio account: without it she falls back to the free one and tells you.", com.capri.core.Fish.Free + " est l'offre gratuite de Fish Audio. Ses autres modèles demandent du crédit sur ton compte Fish Audio : sans crédit, elle repasse sur le gratuit et te le dit."))
                 f.note(Lang.pick("Never clone or imitate a real person's voice without their clear consent.", "Ne clone ni n'imite jamais la voix d'une vraie personne sans son accord clair."))
             }
             "openai" -> {
@@ -116,7 +118,7 @@ class SettingsActivity : NeonActivity() {
             f.slider("Volume", 0, 100, prefs.volume, { "$it %" }) { prefs.volume = it; changed() }
             f.toggle(Lang.pick("Quiet (typed chat stays silent)", "Silencieux (le chat écrit reste muet)"), prefs.quiet) { prefs.quiet = it; changed() }
             f.toggle(Lang.pick("Interrupt her by talking", "L'interrompre en parlant"), prefs.bargeIn, Lang.pick("Needs the phone's echo canceller; works best with headphones.", "Utilise l'annulation d'écho du téléphone ; marche mieux avec un casque.")) { prefs.bargeIn = it }
-            f.buttons(Lang.pick("Test her voice", "Tester sa voix") to { capri.speak(Lang.pick("Hey choom, this is my voice.", "Salut choom, c'est ma voix."), voice = false) })
+            f.buttons(Lang.pick("Test her voice", "Tester sa voix") to { capri.mouth.retell(); capri.speak(Lang.pick("Hey choom, this is my voice.", "Salut choom, c'est ma voix."), voice = false) })
         }
     }
 

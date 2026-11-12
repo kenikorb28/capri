@@ -26,6 +26,7 @@
 - Canal de mise à jour : **ton dépôt `kenikorb28/capri`** au lieu du projet d'origine (décision n° 6), pour qu'une version d'origine ne remplace jamais l'écosystème. Les packs de voix restent téléchargés depuis le projet d'origine.
 
 ### Capri Android
+- **Fish Audio** (12 novembre) : champ **Modèle** dans Réglages > VOIX, vitesse envoyée à Fish Audio, ID de voix lu correctement depuis un lien (un lien finissant par `/` donnait un ID vide), espaces retirés autour de la clé, erreurs expliquées (clé refusée, crédit, voix introuvable) sans jamais montrer la clé, repli automatique sur `s2.1-pro-free` quand un modèle payant n'a pas de crédit, et « Tester sa voix » redit la raison à chaque essai. La requête est construite par le moteur (`core/Fish.kt`, 5 tests). Détails et état réel : `android/docs/FISH_AUDIO.md`. Pas encore fait : la lecture en streaming.
 - `sync/SyncHub.kt` réécrit pour Capri Link v2 : synchro automatique (après chaque changement et chaque réponse, avant de répondre si elle date, en direct bulle ouverte sauf ÉCONOMIE), PC retrouvé sur le Wi-Fi s'il change d'adresse, passage de conversation, fichiers dans les deux sens (15 Mo max).
 - `sync/LinkJob.kt` : une synchro environ toutes les 15 minutes par le planificateur d'Android, sans nouvelle permission.
 - Réglages : section **CAPRI LINK** (recherche du PC, code, synchro automatique, tester, oublier).
