@@ -118,12 +118,18 @@ class IntroView(context: Context, private val ground: Int) : View(context) {
     @Volatile private var shot: Shot? = null
     @Volatile private var stopped = false
     private var leaving = false
+    private var begun = false
 
     init {
         setBackgroundColor(ground)
         isClickable = true
         setOnClickListener { leave() }
-        Thread({ play() }, "capri-intro").start()
+    }
+
+    // Her intro's clock starts when the screen is about to show, not while the app is still opening behind it.
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (!begun) { begun = true; Thread({ play() }, "capri-intro").start() }
     }
 
     private fun picture(i: Int, into: Bitmap?): Bitmap? {
