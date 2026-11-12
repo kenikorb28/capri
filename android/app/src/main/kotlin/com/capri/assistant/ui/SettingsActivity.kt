@@ -381,7 +381,7 @@ class SettingsActivity : NeonActivity() {
                     else if (kept.isEmpty()) Lang.pick("Direct personality loaded.", "Personnalité directe chargée.")
                     else Lang.pick("Direct personality loaded. Yours is kept as personality.backup.md.", "Personnalité directe chargée. La tienne est gardée dans personality.backup.md."))
             })
-        f.note(Lang.pick("Direct: frank, impatient and teasing, talks like a 19-year-old, written in French. Her safety lines stay, and she never says she is human.", "Directe : franche, impatiente, taquine, parle comme une fille de 19 ans. Ses règles de sécurité restent, et elle ne dit jamais qu'elle est humaine."))
+        f.note(Lang.pick("Direct: frank, sharp-tongued, chatty and fond of you, talks like a 19-year-old, written in French. Her safety lines stay, and she never says she is human. For longer replies: BRAIN > Replies.", "Directe : franche, mordante, bavarde et attachée à toi, parle comme une fille de 19 ans. Ses règles de sécurité restent, et elle ne dit jamais qu'elle est humaine. Pour des réponses plus longues : CERVEAU > Réponses."))
     }
 
     private fun security() {

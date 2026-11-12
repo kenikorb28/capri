@@ -56,9 +56,16 @@ Ces parties demandent le code source de Capri Mobile, qui n'était pas accessibl
 **Réglages > TOI > Charger la personnalité directe** écrit une seconde personnalité dans `personality.md`. Ce que tu avais
 écrit toi-même est gardé dans `personality.backup.md`, et **Réinitialiser sa personnalité** remet celle d'origine.
 
-Elle reprend de la demande : Caprie, le caractère d'une fille de 19 ans, mature, audacieuse, directe, impatiente,
-taquine, le parler naturel et argotique (« euh », « genre », « mdr »), pas d'emojis, pas de politesse artificielle, des
-phrases courtes, la curiosité pour ta journée et tes proches.
+Elle reprend de la demande : Caprie, le caractère d'une fille de 19 ans, mature, audacieuse, directe, impatiente, le
+parler naturel et argotique (« euh », « genre », « mdr »), pas d'emojis, pas de politesse artificielle, la curiosité
+pour ta journée et tes proches.
+
+Deuxième version, le 12 novembre au soir, à ta demande : elle est plus **mordante** (repartie, sarcasme, elle ne laisse
+passer ni une excuse ni une flemme, sans jamais humilier), plus **bavarde** (elle ajoute son avis, pose des questions,
+rebondit) et plus **affectueuse** (attachée, protectrice, fière de toi et elle le dit, elle retient ce que tu racontes),
+avec l'affection d'une meilleure amie. La longueur de ses réponses reste celle de **Réglages > CERVEAU > Réponses** :
+mets *Moyennes* ou *Longues* pour qu'elle parle vraiment plus. Recharger la personnalité directe après une mise à jour
+ne touche pas à ta sauvegarde : l'ancienne version du texte est reconnue.
 
 Elle ne reprend pas trois choses. Le contenu sexuel explicite : les règles de sécurité de Capri, écrites par son auteur
 et gardées mot pour mot, passent toujours après la personnalité et l'excluent. L'affirmation d'être une vraie femme et
