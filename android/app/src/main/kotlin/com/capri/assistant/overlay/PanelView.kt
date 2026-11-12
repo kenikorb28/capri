@@ -196,7 +196,10 @@ class PanelView(context: Context, private val capri: Capri, private val host: Ho
     fun add(l: Line) {
         if (l.text.isBlank()) { refill(); return }
         partial.visibility = GONE
-        log.addView(bubbleFor(l))
+        val fresh = bubbleFor(l)
+        log.addView(fresh)
+        // Néon 2.0: a new line slides up into the conversation.
+        if (com.capri.assistant.ui.Neon.soft) { fresh.alpha = 0f; fresh.translationY = dp(10).toFloat(); fresh.animate().alpha(1f).translationY(0f).setDuration(200L).start() }
         while (log.childCount > (if (full) 60 else 6)) log.removeViewAt(0)
         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         if (l.who == Line.CAPRI) showConfirm(Security.pending())

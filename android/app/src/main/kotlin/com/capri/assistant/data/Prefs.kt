@@ -197,6 +197,8 @@ class Prefs(context: Context) {
     var keeping: Boolean get() = b("keeping", true); set(v) = put("keeping", v)
     var digging: Boolean get() = b("digging", true); set(v) = put("digging", v)
     var theme: Int get() = i("theme", 0); set(v) = put("theme", v)
+    // 0 = Néon 2.0 (rounded glass plates, glow, motion and touch feedback), 1 = her first look with clipped corners.
+    var look: Int get() = i("look", 0); set(v) = put("look", v)
     var onboarded: Boolean get() = b("onboarded", false); set(v) = put("onboarded", v)
 
     // CONSOMMATION: monthly limits (0 = none) for the cloud brain, in tokens, and the cloud voice, in characters. The

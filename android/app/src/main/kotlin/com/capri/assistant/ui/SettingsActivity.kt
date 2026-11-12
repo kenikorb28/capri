@@ -188,6 +188,7 @@ class SettingsActivity : NeonActivity() {
         f.toggle(Lang.pick("Dim over full-screen apps", "Atténuer sur les apps plein écran"), prefs.dimFullscreen) { prefs.dimFullscreen = it; changed() }
         f.toggle(Lang.pick("Start after the phone restarts", "Démarrer après un redémarrage"), prefs.startOnBoot, Lang.pick("After a restart, open Capri once for the microphone (Android's rule).", "Après un redémarrage, ouvre Capri une fois pour le micro (règle d'Android).")) { prefs.startOnBoot = it }
         f.choice(Lang.pick("Look", "Thème"), listOf(Lang.pick("Phone", "Système"), Lang.pick("Dark", "Sombre"), Lang.pick("Light", "Clair")), prefs.theme) { prefs.theme = it; recreate() }
+        f.choice("Style", listOf("Néon 2.0", Lang.pick("Classic neon", "Néon classique")), prefs.look, Lang.pick("Néon 2.0: rounded glass cards, glow, motion and touch feedback.", "Néon 2.0 : cartes arrondies en verre, halo, mouvement et retour tactile.")) { prefs.look = it; recreate() }
     }
 
     private fun notifications() {
