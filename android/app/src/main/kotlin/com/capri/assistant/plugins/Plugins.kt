@@ -26,6 +26,7 @@ object Plugins {
             Toolbox.s(Toolbox.p("kind", "What to do", listOf("coin", "dice", "list")) + "," + Toolbox.p("text", "For list, the choices separated by commas or 'ou'; for dice, how many sides"), "kind"), -1, "flip a coin, roll dice or pick at random", "plugins"))
         capri.hands.plug("random_pick") { args -> pick(args) }
         Intents.route(::pickPhrase)
+        Extras.install(capri)
     }
 
     // "Calcule 12 fois 3", "combien font 15 % de 2000": straight to the calculator, no brain needed.

@@ -110,7 +110,19 @@ class Mouth(private val capri: Capri) {
 
     private fun cloud(words: String, id: Int, kind: String) {
         capri.io.execute {
-            val file = try { File(capri.app.cacheDir, "voice-$id.mp3").apply { writeBytes(fetch(words, kind)) } } catch (e: Exception) {
+            val name = capri.voiceName(kind)
+            // CACHE VOCAL: a short line she already said with this voice plays from the phone, with no call and no wait.
+            val key = if (capri.prefs.voiceCache && capri.voices.worth(words)) capri.voices.key(kind, voiceMark(kind), words) else null
+            val kept = key?.let { capri.voices.get(it) }
+            if (kept != null) capri.usage.saved(name, words.length)
+            val file: File = kept ?: try {
+                // CONSOMMATION: past this month's limit, the phone's own voice says the line.
+                if (capri.voiceCapped(kind)) throw IllegalStateException(Lang.pick("this month's limit for my cloud voice is reached", "le plafond mensuel de ma voix cloud est atteint"))
+                val sound = fetch(words, kind)
+                capri.usage.voice(name, if (kind == "fish") words.toByteArray(Charsets.UTF_8).size else words.length)
+                val saved: File? = if (key != null) capri.voices.put(key, sound) else null
+                saved ?: File(capri.app.cacheDir, "voice-$id.mp3").apply { writeBytes(sound) }
+            } catch (e: Exception) {
                 capri.log("voice", kind + ": " + (e.message ?: "?"))
                 capri.main.post {
                     if (id != talk) return@post
@@ -119,8 +131,10 @@ class Mouth(private val capri: Capri) {
                 }
                 return@execute
             }
+            // A cached line stays on the phone; a one-off file goes once it has played.
+            val once = file.parentFile != capri.voices.folder
             capri.main.post {
-                if (id != talk) { file.delete(); return@post }
+                if (id != talk) { if (once) file.delete(); return@post }
                 try {
                     val mp = MediaPlayer()
                     player = mp
@@ -128,13 +142,30 @@ class Mouth(private val capri: Capri) {
                     mp.setDataSource(file.path)
                     val v = capri.prefs.volume.coerceIn(0, 100) / 100f
                     mp.setVolume(v, v)
-                    mp.setOnCompletionListener { file.delete(); finished(id) }
+                    mp.setOnCompletionListener { if (once) file.delete(); finished(id) }
                     mp.setOnErrorListener { _, _, _ -> file.delete(); finished(id); true }
                     mp.setOnPreparedListener { if (id == talk) it.start() }
                     mp.prepareAsync()
                 } catch (e: Exception) { file.delete(); system(words, id) }
             }
         }
+    }
+
+    // What makes two lines sound the same: the service, its voice and model, and for Fish Audio her speed.
+    private fun voiceMark(kind: String): String {
+        val p = capri.prefs
+        val light = p.power == "saver"
+        return when (kind) {
+            "elevenlabs" -> p.elevenVoice + "|" + p.elevenModel + "|" + light
+            "fish" -> com.capri.core.Fish.voiceId(p.fishVoice) + "|" + (if (fishFell) com.capri.core.Fish.Free else com.capri.core.Fish.modelName(p.fishModel)) + "|" + p.speed + "|" + light
+            else -> p.speechUrl + "|" + p.speechModel + "|" + p.speechVoice
+        }
+    }
+
+    // « Vérifie-toi » : one real, very short line through the cloud voice they picked. Null when sound came back.
+    fun probe(): String? {
+        val kind = capri.prefs.voice
+        return try { fetch("Test.", kind); capri.usage.voice(capri.voiceName(kind), 5); null } catch (e: Exception) { e.message ?: "?" }
     }
 
     private fun fetch(words: String, kind: String): ByteArray {

@@ -16,6 +16,8 @@ class Backends(val http: Http) {
     @Volatile private var anthropicVersion = Source.AnthropicVersion
     // Tests point her cloud brains at a fake server on this machine.
     @Volatile var baseOverride: String? = null
+    // CONSOMMATION: told after every reply what it cost, as the provider reported it (or an estimate when it didn't).
+    @Volatile var onUsage: ((Source, Tally) -> Unit)? = null
 
     private fun cloudUrl(kind: String, path: String): String = baseOverride?.let { it.trimEnd('/') + (if (kind == "anthropic" || kind == "openai" || kind == "nvidia") "/v1" else "") + path } ?: Source.address(kind, path)
 
@@ -40,9 +42,11 @@ class Backends(val http: Http) {
 
     private fun send(source: Source, url: String, body: Any?, timeout: Int, ticket: Int, extra: Map<String, String> = emptyMap()): HttpReply {
         if (!source.key.isNullOrEmpty() && !Http.safeForKey(url)) throw BrainError(Lang.pick("Your key only goes over https or to your own network.", "Ta clé ne part qu'en https ou vers ton propre réseau."), true)
-        val reply = http.request("POST", url, headers(source) + extra, Json.write(body).toByteArray(Charsets.UTF_8), timeout, ticket)
+        val sent = Json.write(body).toByteArray(Charsets.UTF_8)
+        val reply = http.request("POST", url, headers(source) + extra, sent, timeout, ticket)
         if (reply.status in 300..399) throw BrainError(Lang.pick("Their API moved. Your key wasn't sent to the new address.", "Leur API a déménagé. Ta clé n'a pas été envoyée à la nouvelle adresse."), true)
         if (reply.status >= 400) throw problem(source, reply)
+        onUsage?.let { told -> try { told(source, Tally.read(reply.text, sent.size)) } catch (e: Exception) { } }
         return reply
     }
 

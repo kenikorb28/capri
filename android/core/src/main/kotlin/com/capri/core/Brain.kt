@@ -26,6 +26,9 @@ class Brain(val folder: File, val backends: Backends, val memory: Memory, val re
     @Volatile var situation: (() -> String)? = null
     // Capri Link: what they were doing with her on their PC, so "continue ce que je faisais" works from the phone.
     @Volatile var elsewhere: (() -> String)? = null
+    // A last word before any tool runs, after SECURITY has had its say: the phone's emergency stop and its fingerprint
+    // check. A line back means the tool doesn't run, and that line is its result.
+    @Volatile var guard: ((ToolSpec, Args) -> String?)? = null
     val web = Web(backends.http)
 
     private val history = ArrayList<Msg>()
@@ -257,6 +260,7 @@ class Brain(val folder: File, val backends: Backends, val memory: Memory, val re
         call.args.asked = call.args.asked ?: request
         if (bypass) call.args.confirmed = true
         if (Security.asks(spec, call.args)) return Security.hold(call.name, call.args, request)
+        guard?.let { g -> g(spec, call.args)?.let { return it } }
         return when (call.name) {
             "remember" -> if (call.args.action == "forget") memory.unnote(call.args.text) else memory.note(call.args.text)
             "memory" -> if (call.args.action == "forget_all") { val r = memory.forgetAll(); forget(); r } else memory.show()
@@ -328,7 +332,7 @@ class Brain(val folder: File, val backends: Backends, val memory: Memory, val re
             keep(text, line)
             return Answer(line, "", listOf(direct.name), line)
         }
-        val steady = character() + (if (cues) Voice.Cueing else "") + (if (followUps && !nested) FollowRule else "") + memory.writtenDown()
+        val steady = character() + (if (cues) Voice.Cueing else "") + (if (followUps && !nested) FollowRule else "") + memory.writtenDown() + memory.corrected()
         val chat = synchronized(history) { history.map { it.content } }
         val user = Msg("user", text + memory.recalled(text, chat) + (if (context.isNullOrBlank()) "" else "\n\n($context)"), images)
         val messages = conversation() + user

@@ -15,7 +15,19 @@ import com.capri.core.cut
 // project memories, chat logs, and the buttons to forget one thing or everything.
 class MemoryActivity : NeonActivity() {
     override fun onCreate(saved: Bundle?) { super.onCreate(saved); neonStart() }
-    override fun onResume() { super.onResume(); build() }
+
+    // PROTECTION: with the fingerprint switch on, her memory opens only for them. Asked once each time the page is opened.
+    private var unlocked = false
+    private var asking = false
+    override fun onResume() {
+        super.onResume()
+        if (!capri.prefs.gate || unlocked) { build(); return }
+        if (asking) return
+        asking = true
+        com.capri.assistant.system.Gate.ask(this, com.capri.core.Lang.pick("Open Capri's memory", "Ouvrir la mémoire de Capri")) { ok ->
+            runOnUiThread { asking = false; if (ok) { unlocked = true; build() } else finish() }
+        }
+    }
 
     private fun build() {
         val m = capri.memory

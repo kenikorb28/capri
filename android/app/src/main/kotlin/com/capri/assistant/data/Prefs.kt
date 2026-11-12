@@ -198,4 +198,18 @@ class Prefs(context: Context) {
     var digging: Boolean get() = b("digging", true); set(v) = put("digging", v)
     var theme: Int get() = i("theme", 0); set(v) = put("theme", v)
     var onboarded: Boolean get() = b("onboarded", false); set(v) = put("onboarded", v)
+
+    // CONSOMMATION: monthly limits (0 = none) for the cloud brain, in tokens, and the cloud voice, in characters. The
+    // prices they type (per million) only turn counts into an estimate. capNoted remembers which limit notes were said.
+    var capBrain: Long get() = sp.getLong("capBrain", 0L); set(v) = put("capBrain", v)
+    var capVoice: Long get() = sp.getLong("capVoice", 0L); set(v) = put("capVoice", v)
+    var priceBrain: String get() = s("priceBrain", ""); set(v) = put("priceBrain", v)
+    var priceVoice: String get() = s("priceVoice", ""); set(v) = put("priceVoice", v)
+    var capNoted: String get() = s("capNoted", ""); set(v) = put("capNoted", v)
+    var voiceCache: Boolean get() = b("voiceCache", true); set(v) = put("voiceCache", v)
+    // PROTECTION: the fingerprint check before sensitive actions, and the emergency stop (it survives a restart).
+    var gate: Boolean get() = b("gate", false); set(v) = put("gate", v)
+    var halted: Boolean get() = b("halted", false); set(v) = put("halted", v)
+    // SAUVEGARDE: whether their API keys go into the encrypted file.
+    var backupKeys: Boolean get() = b("backupKeys", false); set(v) = put("backupKeys", v)
 }

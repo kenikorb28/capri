@@ -97,6 +97,9 @@ class Capri(val app: CapriApp) {
     val notices = NoticeBox()
     val watches = Watches(this)
     val sync = SyncHub(this)
+    // CONSOMMATION and CACHE VOCAL: what her cloud brain and voice used this month, and the short lines already said.
+    val usage = com.capri.core.Usage(folder)
+    val voices = com.capri.core.VoiceCache(java.io.File(app.cacheDir, "voice-cache"))
     val lines = ArrayList<Line>()
     private val listeners = CopyOnWriteArrayList<CapriListener>()
     @Volatile var mood = Mood.IDLE
@@ -122,11 +125,14 @@ class Capri(val app: CapriApp) {
         brain.hands = hands
         brain.onSwitch = { model -> log("nvidia", "switched to $model for this ask") }
         brain.situation = { DeviceInfo.situation(app, this) }
+        backends.onUsage = { source, tally -> usage.brain(if (source.host != null) "pc" else source.kind, tally) }
+        brain.guard = { spec, args -> guard(spec, args) }
         reminders.schedule = { Alarms.schedule(app, it) }
         reminders.unschedule = { Alarms.cancel(app, it) }
         // Capri Link: whatever she writes down reaches their PC a few seconds later.
         memory.changed = { sync.soon() }
         apply()
+        if (prefs.halted) wake.pause()
         watches.load()
         io.execute {
             brain.load()
@@ -245,6 +251,16 @@ class Capri(val app: CapriApp) {
             val chosen = brain.source
             val noNet = chosen != null && chosen.host == null && !DeviceInfo.online(app)
             if (noNet) brain.source = null
+            // CONSOMMATION: past this month's limit for the cloud brain, their PC answers if one is set up; otherwise only
+            // plain commands run until the month turns or they raise the limit.
+            val overBrain = com.capri.core.Usage.over(prefs.capBrain, usage.tokens())
+            val capped = overBrain && !noNet && chosen != null && chosen.host == null
+            if (capped) {
+                val pc = serverSource()
+                brain.source = pc
+                main.post { capSaid("brain", if (pc != null) Lang.pick("This month's limit for my cloud brain is reached, so your PC answers.", "Le plafond mensuel de mon cerveau cloud est atteint : c'est ton PC qui répond.")
+                    else Lang.pick("This month's limit for my cloud brain is reached: I only do plain commands until you raise it in Settings > USAGE.", "Le plafond mensuel de mon cerveau cloud est atteint : je ne fais plus que les commandes simples, jusqu'à ce que tu le montes dans Réglages > CONSOMMATION.")) }
+            }
             try {
                 // Capri Link: if the last sync is old, a short one first, so she knows what they just told her on the PC.
                 sync.quick()
@@ -252,6 +268,8 @@ class Capri(val app: CapriApp) {
                 val answer = try {
                     brain.ask(asked, images, context)
                 } catch (e: com.capri.core.BrainError) {
+                    if (capped && e.message == Problems.Offline) throw com.capri.core.BrainError(Lang.pick("This month's limit for my cloud brain is reached, so I can only do plain things on the phone. Raise it in Settings > USAGE.",
+                        "Le plafond mensuel de mon cerveau cloud est atteint : je ne peux faire que les commandes simples sur le téléphone. Monte-le dans Réglages > CONSOMMATION."), true)
                     if (noNet && e.message == Problems.Offline) throw com.capri.core.BrainError(Lang.pick("No internet right now, so I can only do plain things on the phone (open an app, the flashlight, the volume, a reminder…). The rest comes back with the network.",
                         "Pas de connexion internet : je ne peux faire que les commandes simples sur le téléphone (ouvrir une app, la lampe, le volume, un rappel…). Le reste revient avec le réseau."), true)
                     throw e
@@ -260,7 +278,7 @@ class Capri(val app: CapriApp) {
                 } catch (e: Exception) {
                     // HYBRIDE: their PC didn't answer before any tool ran, so the same ask goes to the cloud once.
                     val pcDown = e is HttpUnreachable || e is HttpTimeout
-                    val cloud = if (pcDown && prefs.brainMode == "hybrid" && brain.source?.host != null && hands.runs == before) cloudSource() else null
+                    val cloud = if (pcDown && !overBrain && prefs.brainMode == "hybrid" && brain.source?.host != null && hands.runs == before) cloudSource() else null
                     if (cloud == null) throw e
                     pcAwayUntil = System.currentTimeMillis() + 120_000L
                     brain.source = cloud
@@ -268,6 +286,7 @@ class Capri(val app: CapriApp) {
                     brain.ask(asked, images, context)
                 }
                 main.post { deliver(answer, voice) }
+                capNote()
                 // And what was said here reaches the PC a few seconds later.
                 sync.soon(6000)
                 brain.foldIfDue()
@@ -282,7 +301,7 @@ class Capri(val app: CapriApp) {
                 }
             } finally {
                 busy = false
-                if (noNet && brain.source == null) brain.source = chosen
+                if ((noNet && brain.source == null) || capped) brain.source = chosen
             }
         }
     }
@@ -382,6 +401,38 @@ class Capri(val app: CapriApp) {
         lines.clear()
         for (x in listeners) x.onLine(Line(Line.SYS, ""))
     }
+
+    // ---- CONSOMMATION: her own PC is never counted; everything else is, against the limits they set.
+    fun voiceName(kind: String): String = if (kind == "openai" && try { Http.isPrivateHost(java.net.URL(prefs.speechUrl).host) } catch (e: Exception) { false }) "pc" else kind
+    fun voiceCapped(kind: String): Boolean = voiceName(kind) != "pc" && com.capri.core.Usage.over(prefs.capVoice, usage.chars())
+
+    // Each limit note is said once a month.
+    private fun capSaid(what: String, text: String) {
+        val month = com.capri.core.Usage.month()
+        val said = prefs.capNoted.split(',').filter { it.startsWith(month) }
+        if ("$month:$what" in said) return
+        prefs.capNoted = (said + "$month:$what").joinToString(",")
+        line(Line.SYS, text)
+    }
+
+    private fun capNote() {
+        val brainShare = com.capri.core.Usage.share(prefs.capBrain, usage.tokens())
+        val voiceShare = com.capri.core.Usage.share(prefs.capVoice, usage.chars())
+        if (brainShare in 80..99) main.post { capSaid("brain80", Lang.pick("Heads up: $brainShare % of this month's limit for my cloud brain is used.", "Pour info : $brainShare % du plafond mensuel de mon cerveau cloud est utilisé.")) }
+        if (voiceShare in 80..99) main.post { capSaid("voice80", Lang.pick("Heads up: $voiceShare % of this month's limit for my cloud voice is used.", "Pour info : $voiceShare % du plafond mensuel de ma voix cloud est utilisé.")) }
+    }
+
+    // ---- PROTECTION: the emergency stop and the fingerprint check have the last word before any tool runs.
+    private fun guard(spec: com.capri.core.ToolSpec, args: com.capri.core.Args): String? {
+        if (prefs.halted && spec.name != "emergency_stop") return Lang.pick("Emergency stop is on: I do nothing on the phone until you say \"resume\".", "Arrêt d'urgence actif : je ne fais plus rien sur le téléphone tant que tu n'as pas dit « reprends ».")
+        if (prefs.gate && spec.risk(args) == com.capri.core.Risk.HIGH && !com.capri.assistant.system.Gate.blocking(app, Security.question(spec.name, args)))
+            return Lang.pick("Cancelled: that needs your fingerprint or your phone's code.", "Annulé : il faut ton empreinte ou le code du téléphone pour ça.")
+        return null
+    }
+
+    // Stops everything at once and keeps it stopped (no tool, no Hey Capri, no Capri Link) until they resume. Main thread.
+    fun emergencyStop() { prefs.halted = true; interrupt(); wake.pause() }
+    fun resumeAll() { prefs.halted = false; wake.resume() }
 
     fun log(where: String, what: String) {
         io.execute {

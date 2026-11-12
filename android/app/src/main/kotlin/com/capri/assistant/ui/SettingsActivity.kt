@@ -35,7 +35,7 @@ class SettingsActivity : NeonActivity() {
 
     private fun build() {
         val y = fresh()
-        brain(); voice(); ears(); hey(); vision(); modes(); power(); bubble(); notifications(); emergency(); sync(); you(); security()
+        brain(); voice(); ears(); hey(); vision(); modes(); power(); bubble(); notifications(); emergency(); sync(); usage(); backup(); safety(); you(); security()
         setContentView(f.scroll)
         padForBars(f.scroll)
         f.scroll.post { f.scroll.scrollTo(0, y) }
@@ -230,6 +230,134 @@ class SettingsActivity : NeonActivity() {
                 }
             }
             f.field(Lang.pick("Pairing code", "Code d'appairage"), "ABCD-EFGH", "", action = Lang.pick("Pair", "Associer")) { code -> val a = address.text.toString().trim(); bg { link.pair(a, code) } }
+        }
+    }
+
+    // ---- CONSOMMATION: what her cloud brain and cloud voice used this month, the limits, and the voice cache.
+    private fun usage() {
+        f.section(Lang.pick("USAGE", "CONSOMMATION"), com.capri.core.Usage.month())
+        f.note(capri.usage.report(prefs.capBrain, prefs.capVoice, com.capri.core.Usage.price(prefs.priceBrain), com.capri.core.Usage.price(prefs.priceVoice)), p.text)
+        fun count(typed: String) = typed.filter { it.isDigit() }.take(15).toLongOrNull() ?: 0L
+        f.field(Lang.pick("Monthly limit, cloud brain (tokens; empty = none)", "Plafond mensuel, cerveau cloud (jetons ; vide = aucun)"), "2000000", if (prefs.capBrain > 0) prefs.capBrain.toString() else "") { prefs.capBrain = count(it); build() }
+        f.field(Lang.pick("Monthly limit, cloud voice (characters; empty = none)", "Plafond mensuel, voix cloud (caractères ; vide = aucun)"), "100000", if (prefs.capVoice > 0) prefs.capVoice.toString() else "") { prefs.capVoice = count(it); build() }
+        f.field(Lang.pick("Your price per million tokens (optional)", "Ton prix par million de jetons (facultatif)"), "0,50", prefs.priceBrain) { prefs.priceBrain = it.trim(); build() }
+        f.field(Lang.pick("Your price per million characters (optional)", "Ton prix par million de caractères (facultatif)"), "15", prefs.priceVoice) { prefs.priceVoice = it.trim(); build() }
+        f.note(Lang.pick("At the limit, her cloud voice gives way to the phone's voice, and her cloud brain to your PC if one is set up (otherwise only plain commands run). Counts are the providers' own when they report them, estimated when they don't. Prices only turn counts into an estimate: nothing is billed here.",
+            "Au plafond, sa voix cloud laisse la place à la voix du téléphone, et son cerveau cloud à ton PC s'il est configuré (sinon seules les commandes simples marchent). Les comptes sont ceux des fournisseurs quand ils les donnent, estimés sinon. Les prix ne servent qu'à estimer : rien n'est facturé ici."))
+        f.toggle(Lang.pick("Voice cache", "Cache vocal"), prefs.voiceCache, Lang.pick("Short lines a cloud voice already said play again from the phone: no call, no wait.", "Les phrases courtes déjà dites par une voix cloud rejouent depuis le téléphone : ni appel, ni attente.")) { prefs.voiceCache = it }
+        f.buttons(Lang.pick("Empty the voice cache", "Vider le cache vocal") + " (" + capri.voices.count() + ", " + (capri.voices.bytes() / 1024) + Lang.pick(" KB)", " Ko)") to { capri.voices.clear(); build() },
+            Lang.pick("Reset the counts", "Remettre les compteurs à zéro") to { capri.usage.reset(); prefs.capNoted = ""; build() })
+    }
+
+    // ---- SAUVEGARDE: one encrypted file with her memory and their settings, made and restored from here.
+    private var backupPassword: String? = null
+
+    private fun backup() {
+        f.section(Lang.pick("BACKUP", "SAUVEGARDE"))
+        f.note(Lang.pick("One file, locked with your password: her memory, your chats, reminders, Hey Capri and your settings. Keep it off the phone (PC, USB key, drive). Capri Link isn't in it: pair again once after a restore.",
+            "Un seul fichier, fermé par ton mot de passe : sa mémoire, vos discussions, les rappels, Hey Capri et tes réglages. Garde-le hors du téléphone (PC, clé USB, drive). Capri Link n'y est pas : tu refais l'appairage une fois après une restauration."))
+        f.toggle(Lang.pick("Include my API keys", "Inclure mes clés API"), prefs.backupKeys, Lang.pick("They go inside the locked file. Off: you paste them again after a restore.", "Elles vont dans le fichier fermé. Coupé : tu les recolles après une restauration.")) { prefs.backupKeys = it }
+        f.buttons(Lang.pick("Create a backup", "Créer une sauvegarde") to { backupCreate() }, Lang.pick("Restore", "Restaurer") to { backupRestore() })
+    }
+
+    private fun askPassword(twice: Boolean, then: (String) -> Unit) {
+        val pad = (20 * resources.displayMetrics.density).toInt()
+        val box = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL; setPadding(pad, pad / 2, pad, 0) }
+        fun input(label: String): android.widget.EditText {
+            val edit = android.widget.EditText(this)
+            edit.hint = label
+            edit.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            box.addView(edit)
+            return edit
+        }
+        val first = input(if (twice) Lang.pick("Password (8 characters or more)", "Mot de passe (8 caractères ou plus)") else Lang.pick("Password", "Mot de passe"))
+        val second = if (twice) input(Lang.pick("Once more", "Encore une fois")) else null
+        val dialog = AlertDialog.Builder(this).setTitle(Lang.pick("Backup password", "Mot de passe de la sauvegarde")).setView(box).setNegativeButton(Lang.pick("Cancel", "Annuler"), null)
+        if (twice) dialog.setMessage(Lang.pick("Nobody can find it for you: without it, the backup never opens.", "Personne ne peut le retrouver pour toi : sans lui, la sauvegarde ne s'ouvre jamais."))
+        dialog.setPositiveButton("OK") { _, _ ->
+            val typed = first.text.toString()
+            if (twice && !com.capri.core.Backup.strong(typed)) toast(Lang.pick("Too short: 8 characters or more.", "Trop court : 8 caractères ou plus."))
+            else if (second != null && second.text.toString() != typed) toast(Lang.pick("The two don't match.", "Les deux ne sont pas pareils."))
+            else if (typed.isNotEmpty()) then(typed)
+        }
+        dialog.show()
+    }
+
+    private fun noPicker() = toast(Lang.pick("This phone has no file picker.", "Ce téléphone n'a pas de sélecteur de fichiers."))
+
+    private fun backupCreate() = gated(Lang.pick("Create a backup", "Créer une sauvegarde")) {
+        askPassword(true) { typed ->
+            backupPassword = typed
+            val name = "capri-" + java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(java.util.Date()) + ".capribak"
+            try { startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/octet-stream").putExtra(Intent.EXTRA_TITLE, name), 71) } catch (e: Exception) { noPicker() }
+        }
+    }
+
+    private fun backupRestore() = gated(Lang.pick("Restore a backup", "Restaurer une sauvegarde")) {
+        try { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), 72) } catch (e: Exception) { noPicker() }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val uri = data?.data
+        if (resultCode != RESULT_OK || uri == null) return
+        if (requestCode == 71) {
+            val typed = backupPassword ?: return
+            backupPassword = null
+            toast(Lang.pick("Making the backup…", "Je crée la sauvegarde…"))
+            capri.io.execute {
+                val said = try { com.capri.assistant.system.Vault.save(capri, contentResolver, uri, typed, prefs.backupKeys) } catch (e: Exception) { e.message ?: "?" }
+                runOnUiThread { toast(said) }
+            }
+        }
+        if (requestCode == 72) askPassword(false) { typed ->
+            toast(Lang.pick("Opening the backup…", "J'ouvre la sauvegarde…"))
+            capri.io.execute {
+                val files = try { com.capri.assistant.system.Vault.open(contentResolver, uri, typed) } catch (e: Exception) { runOnUiThread { toast(e.message ?: "?") }; return@execute }
+                runOnUiThread {
+                    AlertDialog.Builder(this).setTitle(Lang.pick("Restore this backup?", "Restaurer cette sauvegarde ?")).setMessage(com.capri.assistant.system.Vault.describe(files))
+                        .setNegativeButton(Lang.pick("Cancel", "Annuler"), null)
+                        .setPositiveButton(Lang.pick("Restore", "Restaurer")) { _, _ ->
+                            capri.io.execute {
+                                val failed = try { com.capri.assistant.system.Vault.apply(capri, files); null } catch (e: Exception) { e.message ?: "?" }
+                                runOnUiThread {
+                                    if (failed != null) toast(failed)
+                                    else { toast(Lang.pick("Restored. Capri starts again.", "Restauré. Capri redémarre.")); com.capri.assistant.system.Vault.restart(this) }
+                                }
+                            }
+                        }.show()
+                }
+            }
+        }
+    }
+
+    // ---- PROTECTION: the fingerprint check, the emergency stop, and her self-check.
+    private fun gated(title: String, then: () -> Unit) {
+        if (!prefs.gate) then()
+        else com.capri.assistant.system.Gate.ask(this, title) { ok -> runOnUiThread { if (ok) then() else toast(Lang.pick("Cancelled.", "Annulé.")) } }
+    }
+
+    private fun safety() {
+        f.section("PROTECTION")
+        f.toggle(Lang.pick("Fingerprint or phone code for sensitive actions", "Empreinte ou code du téléphone pour les actions sensibles"), prefs.gate,
+            Lang.pick("Asked before sending, paying, deleting or wiping her memory, to open the Memory page, and for backups.", "Demandé avant d'envoyer, payer, supprimer ou effacer sa mémoire, pour ouvrir la page Mémoire, et pour les sauvegardes.")) { on ->
+            if (on && !com.capri.assistant.system.Gate.ready(this)) { toast(Lang.pick("Set up a fingerprint or a screen lock in Android first.", "Configure d'abord une empreinte ou un verrou d'écran dans Android.")); build() }
+            else if (on) { prefs.gate = true; build() }
+            else com.capri.assistant.system.Gate.ask(this, Lang.pick("Turn the protection off", "Couper la protection")) { ok -> runOnUiThread { if (ok) prefs.gate = false; build() } }
+        }
+        if (prefs.halted) {
+            f.note(Lang.pick("EMERGENCY STOP IS ON: no tool, no Hey Capri, no Capri Link until you resume.", "ARRÊT D'URGENCE ACTIF : aucun outil, pas de Hey Capri, pas de Capri Link tant que tu n'as pas repris."), p.text)
+            f.buttons(Lang.pick("Resume", "Reprendre") to { gated(Lang.pick("Resume Capri", "Reprendre Capri")) { capri.resumeAll(); build() } })
+        } else f.buttons(Lang.pick("Emergency stop", "Arrêt d'urgence") to { capri.emergencyStop(); toast(Lang.pick("Everything is stopped. Come back here, or say \"resume\".", "Tout est arrêté. Reviens ici, ou dis « reprends ».")); build() })
+        f.buttons(Lang.pick("Check yourself", "Vérifie-toi") to { selfCheck() })
+        f.note(Lang.pick("The check really tries each function. With a cloud voice it says one short word, which uses a few characters of credit.", "La vérification essaie vraiment chaque fonction. Avec une voix cloud elle dit un mot court, ce qui consomme quelques caractères de crédit."))
+    }
+
+    private fun selfCheck() {
+        toast(Lang.pick("Checking…", "Je vérifie…"))
+        capri.io.execute {
+            val board = try { com.capri.core.Checks.report(com.capri.assistant.system.SelfCheck.run(capri)) } catch (e: Exception) { e.message ?: "?" }
+            runOnUiThread { if (!isFinishing) AlertDialog.Builder(this).setTitle(Lang.pick("Capri checked herself", "Capri s'est vérifiée")).setMessage(board).setPositiveButton("OK", null).show() }
         }
     }
 

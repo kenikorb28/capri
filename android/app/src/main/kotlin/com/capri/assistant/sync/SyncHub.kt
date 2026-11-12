@@ -156,6 +156,8 @@ class SyncHub(private val capri: Capri) {
 
     // A full sync now, one at a time: null when one is already running (it carries the same changes).
     fun syncNow(reason: String): Synced? {
+        // PROTECTION: the emergency stop pauses Capri Link too.
+        if (capri.prefs.halted) return null
         val pc = pc() ?: return null
         if (!syncing.compareAndSet(false, true)) return null
         try {

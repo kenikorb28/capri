@@ -39,6 +39,8 @@ class Memory(val folder: File) {
         const val NotesHead = "# What Capri remembers about you\n> She reads this every time you chat. Edit or delete anything here.\n\n"
         const val MemoriesHead = "# What Capri remembers from your chats\n> She writes this herself from your chats and reads it every time you talk. Edit or delete anything here.\n\n"
         const val NotesShown = 40
+        // A note that starts like this is a correction: what they told her she got wrong, in their words.
+        const val CorrectionMark = "Correction :"
         const val Private = "Addresses, schools, numbers and passwords stay out of my notes."
 
         val Personal = rxi("\\b(passwords?|passcodes?|pin (code|number)|log ?in details|credit card|card number|bank (account|details|number)|account number|sort code|routing number|social security|passport|(home|street|postal|email|e-mail) address|(my|their|his|her) address|postcode|post code|zip code|(phone|mobile|cell) number|surname|last name|full name|real name|date of birth|(i|they) live (in|at|on)|(my|their|his|her) school(?: is|'s| is called| called)|school (is )?called|mot de passe|code pin|carte bancaire|numéro de carte|compte bancaire|iban|adresse|code postal|numéro de téléphone|nom de famille|date de naissance|j'habite|mon école)\\b|@\\w+\\.\\w+|\\d[\\d\\s-]{6,}\\d|\\b\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2,4}\\b")
@@ -153,6 +155,24 @@ class Memory(val folder: File) {
     }
 
     // What she's written down: it only changes when she writes, so a cached prompt runs up to here.
+    // CORRECTIONS are notes, so they show on the Memory page, can be edited or forgotten like any note, and travel with
+    // her notes over Capri Link. Unlike other notes, she is told to follow every one of them, every time.
+    fun correct(what: String?): String {
+        val text = (what ?: "").squash().trim(' ', '-', '.', ',', ':', ';', '"')
+        if (text.isEmpty()) return Lang.pick("What should I have done instead?", "J'aurais dû faire quoi à la place ?")
+        val before = corrections().size
+        val said = note("$CorrectionMark $text")
+        return if (corrections().size > before) Lang.pick("Got it. From now on: $text.", "C'est retenu. À partir de maintenant : $text.") else said
+    }
+
+    fun corrections(): List<String> = noteLines().map { it.trim().trimStart('-', '*', ' ') }
+        .filter { it.startsWith(CorrectionMark, ignoreCase = true) }.map { it.substring(CorrectionMark.length).trim() }.filter { it.isNotEmpty() }
+
+    fun corrected(): String {
+        val list = corrections().takeLast(30)
+        return if (list.isEmpty()) "" else "\nCorrections they gave you. They come before your habits: follow each one, every time.\n" + list.joinToString("\n") { "- $it" }
+    }
+
     fun writtenDown(): String {
         var n = notes()
         if (n.isNotEmpty() && Regex("^- Pronouns:", setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)).containsMatchIn(n)) n += "\nGo by the pronouns in your notes, and match words like girl, boy or choom to them."
