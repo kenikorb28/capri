@@ -5,6 +5,8 @@ Required Notice: Anyone who uses Capri's code, art, animations or any of its oth
 
 Capri Android is a non-commercial port of Capri. It reuses Capri's personality and safety lines, behaviour, sprites (scaled to half size) and greeting voice lines, all under the PolyForm Noncommercial License 1.0.0 in LICENSE.md. It must not be sold or put in paid products.
 
+Capri Mobile: Capri Android also reuses pictures from Capri Mobile 0.4.5-beta by Lachy, under the same PolyForm Noncommercial License 1.0.0 and the same required notices: her intro (app/src/main/assets/intro), her eyes (app/src/main/assets/eyes), her full-size strips (app/src/main/assets/hero) and her dangle strip (app/src/main/assets/sprites/dangle.png, scaled to half size). Only the pictures are reused; the code that plays them is Capri Android's own.
+
 Fan work: Capri is an unofficial fan project and is not approved or endorsed by CD PROJEKT RED, the anime's rights holders or its voice actors.
 
 Other parts:

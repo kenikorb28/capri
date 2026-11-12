@@ -19,6 +19,7 @@ import android.widget.TextView
 import com.capri.assistant.engine.Capri
 import com.capri.assistant.engine.Line
 import com.capri.assistant.engine.Mood
+import com.capri.assistant.ui.EyesView
 import com.capri.assistant.ui.Neon
 import com.capri.assistant.ui.Plate
 import com.capri.core.Lang
@@ -45,6 +46,7 @@ class PanelView(context: Context, private val capri: Capri, private val host: Ho
     private val levels = row()
     private val input = EditText(context)
     private var full = screen || capri.prefs.panelFull
+    private val eyes = EyesView(context)
 
     init {
         orientation = VERTICAL
@@ -53,6 +55,7 @@ class PanelView(context: Context, private val capri: Capri, private val host: Ho
         isFocusableInTouchMode = true
 
         val head = LinearLayout(context).apply { orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        head.addView(eyes, LayoutParams(dp(40), dp(30)).apply { rightMargin = dp(8) })
         head.addView(text("CAPRI", 17f, p.pink, true).apply { letterSpacing = 0.18f })
         head.addView(modeChip.apply { setPadding(dp(8), dp(2), dp(8), dp(2)); visibility = GONE }, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(8) })
         head.addView(View(context), LayoutParams(0, 1, 1f))
@@ -212,6 +215,7 @@ class PanelView(context: Context, private val capri: Capri, private val host: Ho
     }
 
     fun mood(m: Mood, detail: String) {
+        eyes.mood(m)
         status.text = when (m) {
             Mood.LISTENING -> Lang.pick("Listening…", "J'écoute…")
             Mood.THINKING -> Lang.pick("Thinking…", "Je réfléchis…")

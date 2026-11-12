@@ -189,6 +189,7 @@ class SettingsActivity : NeonActivity() {
         f.toggle(Lang.pick("Start after the phone restarts", "Démarrer après un redémarrage"), prefs.startOnBoot, Lang.pick("After a restart, open Capri once for the microphone (Android's rule).", "Après un redémarrage, ouvre Capri une fois pour le micro (règle d'Android).")) { prefs.startOnBoot = it }
         f.choice(Lang.pick("Look", "Thème"), listOf(Lang.pick("Phone", "Système"), Lang.pick("Dark", "Sombre"), Lang.pick("Light", "Clair")), prefs.theme) { prefs.theme = it; recreate() }
         f.choice("Style", listOf("Néon 2.0", Lang.pick("Classic neon", "Néon classique")), prefs.look, Lang.pick("Néon 2.0: rounded glass cards, glow, motion and touch feedback.", "Néon 2.0 : cartes arrondies en verre, halo, mouvement et retour tactile.")) { prefs.look = it; recreate() }
+        f.toggle(Lang.pick("Intro when the app opens", "Intro à l'ouverture"), prefs.intro, Lang.pick("Capri's short animation when you open the app. A tap skips it. Off with her idle animation or in the battery saver profile.", "La courte animation de Capri quand tu ouvres l'app. Un toucher la passe. Coupée avec l'animation au repos ou en profil économie.")) { prefs.intro = it }
     }
 
     private fun notifications() {
@@ -373,7 +374,14 @@ class SettingsActivity : NeonActivity() {
                 startActivity(Intent(this, TextEditActivity::class.java).putExtra("file", file.path).putExtra("title", "personality.md").putExtra("template", Persona.DefaultPersonality)
                     .putExtra("sub", Lang.pick("Her safety lines always stay, whatever you write here.", "Ses règles de sécurité restent toujours, quoi que tu écrives ici.")))
             })
-        f.buttons(Lang.pick("Reset her personality", "Réinitialiser sa personnalité") to { Persona.resetPersonality(); toast(Lang.pick("Back to her own personality.", "Retour à sa personnalité d'origine.")) })
+        f.buttons(Lang.pick("Reset her personality", "Réinitialiser sa personnalité") to { Persona.resetPersonality(); toast(Lang.pick("Back to her own personality.", "Retour à sa personnalité d'origine.")) },
+            Lang.pick("Load the direct personality", "Charger la personnalité directe") to {
+                val kept = Persona.usePersonality(Persona.DirectPersonality)
+                toast(if (kept == null) Lang.pick("Couldn't write personality.md.", "Impossible d'écrire personality.md.")
+                    else if (kept.isEmpty()) Lang.pick("Direct personality loaded.", "Personnalité directe chargée.")
+                    else Lang.pick("Direct personality loaded. Yours is kept as personality.backup.md.", "Personnalité directe chargée. La tienne est gardée dans personality.backup.md."))
+            })
+        f.note(Lang.pick("Direct: frank, impatient and teasing, talks like a 19-year-old, written in French. Her safety lines stay, and she never says she is human.", "Directe : franche, impatiente, taquine, parle comme une fille de 19 ans. Ses règles de sécurité restent, et elle ne dit jamais qu'elle est humaine."))
     }
 
     private fun security() {

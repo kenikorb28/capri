@@ -36,6 +36,8 @@ object Sprites {
     val Leave = Clip("leave", 12, 15.0, false)
     val Mouth = Clip("mouth", 5, 12.0, true)
     val Dance = Clip("dance", 16, 10.0, true)
+    // Hanging from the finger while she is dragged: Capri Mobile's strip, at the bubble's size.
+    val Dangle = Clip("dangle", 24, 12.0, true)
 
     private val cache = HashMap<String, Bitmap>()
 
@@ -84,6 +86,9 @@ class BubbleView(context: Context, private val events: Events) : View(context) {
     fun play(c: Clip) { clip = c; frame = 0; started = System.currentTimeMillis(); if (c == Sprites.Dance) dancing = true; invalidate() }
     fun stopDancing() { dancing = false; play(Sprites.Idle) }
 
+    // Let go after a drag: she stops dangling and goes back to what she was doing.
+    private fun settled() { if (clip == Sprites.Dangle) play(if (dancing) Sprites.Dance else Sprites.Idle) }
+
     fun mood(m: Mood) {
         val was = mood
         mood = m
@@ -121,7 +126,8 @@ class BubbleView(context: Context, private val events: Events) : View(context) {
             canvas.save(); canvas.clipPath(clipPath)
             val dst = RectF(cx - wide / 2, cy - tall * 0.40f, cx + wide / 2, cy + tall * 0.60f)
             canvas.drawBitmap(Sprites.strip(context, clip) ?: strip, src, dst, paint)
-            if (mood == Mood.SPEAKING && clip != Sprites.Glitch) Sprites.strip(context, Sprites.Mouth)?.let { m ->
+            // Her mouth strip is drawn for her standing face: not over a glitch, nor while she hangs from a finger.
+            if (mood == Mood.SPEAKING && clip != Sprites.Glitch && clip != Sprites.Dangle) Sprites.strip(context, Sprites.Mouth)?.let { m ->
                 canvas.drawBitmap(m, Sprites.cell(m, Sprites.Mouth, ((now / (1000 / 12)) % 5).toInt()), dst, paint)
             }
             canvas.restore()
@@ -166,19 +172,19 @@ class BubbleView(context: Context, private val events: Events) : View(context) {
                 postDelayed(holdCheck, 480)
             }
             MotionEvent.ACTION_MOVE -> {
-                if (!moved && (abs(e.rawX - downX) > slop || abs(e.rawY - downY) > slop)) { moved = true; removeCallbacks(holdCheck) }
+                if (!moved && (abs(e.rawX - downX) > slop || abs(e.rawY - downY) > slop)) { moved = true; removeCallbacks(holdCheck); if (animated && !asleep) play(Sprites.Dangle) }
                 if (moved) { events.moveBy((e.rawX - lastX).toInt(), (e.rawY - lastY).toInt()); lastX = e.rawX; lastY = e.rawY }
             }
             MotionEvent.ACTION_UP -> {
                 removeCallbacks(holdCheck)
-                if (moved) events.dropped()
+                if (moved) { settled(); events.dropped() }
                 else if (!held) {
                     val now = System.currentTimeMillis()
                     if (now - lastTapAt < 300) { removeCallbacks(singleTap); lastTapAt = 0; events.doubleTap() }
                     else { lastTapAt = now; postDelayed(singleTap, 300) }
                 }
             }
-            MotionEvent.ACTION_CANCEL -> removeCallbacks(holdCheck)
+            MotionEvent.ACTION_CANCEL -> { removeCallbacks(holdCheck); settled() }
         }
         return true
     }

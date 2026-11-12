@@ -24,14 +24,26 @@ import com.capri.assistant.assist.NotificationWatcher
 import com.capri.core.Lang
 
 // Her home screen: what's connected, the bubble switch, and the way to every page. The first time, a short checklist.
-class MainActivity : NeonActivity() {
+class MainActivity : NeonActivity(), CapriListener {
     private lateinit var form: Form
+    private var hero: HeroView? = null
 
     override fun onCreate(saved: Bundle?) {
         super.onCreate(saved)
         neonStart()
-        if (intent?.action == "com.capri.assistant.SHOW_BUBBLE") startBubble()
+        val bubble = intent?.action == "com.capri.assistant.SHOW_BUBBLE"
+        // Her intro, over the whole window, when the app is opened by hand.
+        if (saved == null && !bubble && moving() && capri.prefs.intro && Motion.introDue())
+            (window.decorView as? ViewGroup)?.addView(IntroView(this, Neon.Dark.ground), ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        if (bubble) startBubble()
     }
+
+    // Her animations here follow the same switch and power profile as her bubble's.
+    private fun moving() = capri.prefs.animations == 0 && capri.prefs.power != "saver"
+
+    override fun onStart() { super.onStart(); capri.addListener(this) }
+    override fun onStop() { capri.removeListener(this); Motion.release(); super.onStop() }
+    override fun onMood(mood: Mood, detail: String) { runOnUiThread { hero?.mood(mood) } }
 
     override fun onResume() { super.onResume(); build() }
 
@@ -42,6 +54,12 @@ class MainActivity : NeonActivity() {
     private fun build() {
         form = Form(this)
         val c = capri
+        // Capri herself at the top: the same view across rebuilds, so her clip doesn't start over each time.
+        val her = hero ?: HeroView(this, p).also { hero = it }
+        (her.parent as? ViewGroup)?.removeView(her)
+        her.animated = moving()
+        her.mood(c.mood)
+        form.column.addView(her)
         form.title("CAPRI", Lang.pick("Your companion on Android · ", "Ta compagne sur Android · ") + "v" + BuildConfig.VERSION_NAME)
         form.section(Lang.pick("NOW", "MAINTENANT"))
         form.value(Lang.pick("Brain", "Cerveau"), c.brainLabel(), null) { open(SettingsActivity::class.java) }
