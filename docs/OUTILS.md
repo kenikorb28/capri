@@ -58,9 +58,13 @@
    - `capri-android-debug-apk` (ou `capri-android-release-apk` si tu as fait l'étape 6.3).
 3. Si une exécution est rouge ❌ : ouvre-la, clique sur **⋯** en haut à droite > **Download log archive**, et envoie-moi le zip (à défaut, une capture d'écran de l'étape en rouge). Pour Desktop, télécharge aussi l'artefact `smoke-windows` : il contient le rapport complet du test (`smoke-test.txt` et éventuellement `failure.txt`). C'est probable à la toute première compilation de Capri Link côté PC (voir README) : envoie-moi ça et je corrige.
 
-**Minutes gratuites :** un dépôt privé a 2 000 minutes d'Actions gratuites par mois, et GitHub compte une minute Windows comme deux. Une compilation Desktop coûte donc environ 40 minutes, Android environ 10. Le test Mac compte dix fois plus : il ne tourne que si tu le demandes (*Actions* > *Capri Desktop* > *Run workflow*, case *Aussi le test Mac*). Un dépôt public n'a pas de limite de minutes, mais tout le monde peut alors lire le code.
+**Minutes gratuites :** ton dépôt est public depuis novembre 2026, et les Actions sont gratuites et sans limite de minutes sur un dépôt public. S'il redevenait privé : 2 000 minutes gratuites par mois, une minute Windows comptée comme deux, une minute Mac comme dix (c'est pour ça que le test Mac ne tourne que si tu coches *Aussi le test Mac*). Un dépôt public, c'est aussi du code que tout le monde peut lire : aucune clé ni mot de passe ne doit s'y trouver.
+
+**Pour installer ou mettre à jour Capri, pas besoin des *Artifacts* :** les versions publiées se téléchargent avec les deux boutons de la page d'accueil. Publier une version : [PUBLIER.md](PUBLIER.md). Les *Artifacts* restent utiles pour essayer une compilation qui n'est pas encore publiée.
 
 ### Recevoir une mise à jour préparée par Claude (fichier `.bundle`)
+
+*Depuis que le dépôt est relié à Claude, il envoie ses changements directement sur GitHub. Cette méthode reste un secours. Le dossier est maintenant `C:\Users\<toi>\capri`, hors de OneDrive : adapte la première ligne du bloc.*
 
 Quand je t'envoie un fichier comme `capri-maj-1.bundle`, enregistre-le dans Téléchargements, puis colle ce bloc dans PowerShell (pas en administrateur), en remplaçant le nom du fichier si besoin :
 ```powershell

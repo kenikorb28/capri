@@ -1,0 +1,211 @@
+# Capri Release: one GitHub Release per version, holding the files the README's two download buttons point to.
+#   Capri-Setup.exe     Capri Desktop for Windows, built and smoke-tested here (Capri Link included)
+#   Capri-Android.apk   Capri Android, tested here and signed with the owner's own key
+#   SHA256SUMS.txt      their checksums; Capri Desktop's updater checks the installer against it
+# Start it by pushing a tag vX.Y.Z that matches the VERSION file, or by hand (Actions > Capri Release > Run workflow).
+# Capri Desktop reads releases/latest by itself, so publishing here is also how a PC is offered its update.
+# How to publish, and the signing key this needs: docs/PUBLIER.md.
+name: Capri Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  workflow_dispatch:
+
+# One release at a time, and never cut short: a half-published version would be offered to PCs as an update.
+concurrency:
+  group: capri-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: One version everywhere, not published yet
+        id: read
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          v="$(tr -d '[:space:]' < VERSION)"
+          if ! [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::error file=VERSION::VERSION must be three numbers like 2.0.1, not '$v'."; exit 1; fi
+          IFS=. read -r major minor patch <<< "$v"
+          code=$((10#$major * 10000 + 10#$minor * 100 + 10#$patch))
+          fail=0
+          says() { grep -qE -- "$2" "$1" || { echo "::error file=$1::$1 does not match VERSION ($v). Run: python tools/set_version.py $v"; fail=1; }; }
+          dotted="${v//./\\.}"
+          says desktop/app/AssemblyInfo.cs "AssemblyVersion\(\"$dotted\"\)"
+          says desktop/app/AssemblyInfo.cs "AssemblyFileVersion\(\"$dotted\"\)"
+          says desktop/cross/Capri.Cross.csproj "<Version>$dotted</Version>"
+          says android/app/build.gradle.kts "versionName = \"$dotted\""
+          says android/app/build.gradle.kts "versionCode = ${code}[[:space:]]*\$"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$v" ]; then
+            echo "::error::The tag is $GITHUB_REF_NAME but VERSION says $v. The tag must be v$v."; fail=1
+          fi
+          # A published version keeps its files for good: the same number must never name two different builds.
+          if gh release view "v$v" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::Capri $v is already published. Give the new build a new number: python tools/set_version.py <next>"; fail=1
+          fi
+          [ "$fail" = 0 ]
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Capri $v, Android versionCode $code" >> "$GITHUB_STEP_SUMMARY"
+
+  windows:
+    needs: version
+    runs-on: windows-2025
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+      # Same steps as the Capri Desktop workflow: what is published has passed her whole smoke test on this very build.
+      - name: Full size screen
+        shell: powershell
+        timeout-minutes: 3
+        run: ./ci/wide-screen.ps1
+      - name: Build and smoke test
+        shell: pwsh
+        run: ./ci/build-windows.ps1 -OutputDirectory out/windows -SmokeTest -SmokeSeconds 900
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: desktop/out/windows/Capri-Setup.exe
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: release-smoke-windows
+          path: desktop/out/windows/smoke
+
+  android:
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HAS_KEY: ${{ secrets.CAPRI_DEBUG_KEYSTORE_B64 != '' }}
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v5
+      # Android only installs an APK over an app signed with the same key. GitHub's machines make a throwaway key for every
+      # build, so an APK signed here without the owner's key could never update a Capri already on a phone.
+      - name: A release needs the owner's signing key
+        if: env.HAS_KEY != 'true'
+        run: |
+          echo "::error::The secret CAPRI_DEBUG_KEYSTORE_B64 is missing, so the APK cannot be signed with the owner's key. Add it once (docs/PUBLIER.md), then start this workflow again."
+          exit 1
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+      - name: Sign with the owner's key
+        env:
+          KEYSTORE_B64: ${{ secrets.CAPRI_DEBUG_KEYSTORE_B64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode --ignore-garbage > "$HOME/.android/debug.keystore"
+          # The fingerprint is public: it is what a phone compares. The key itself never reaches the log.
+          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey \
+            | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f' > "$RUNNER_TEMP/key.txt"
+          test "$(wc -c < "$RUNNER_TEMP/key.txt")" -ge 64
+          echo "Signing key (SHA-256): $(cat "$RUNNER_TEMP/key.txt")"
+      - name: Test and build
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :core:test :app:testDebugUnitTest :app:assembleDebug
+      - name: The APK is signed by that key
+        run: |
+          set -euo pipefail
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          signer="$("$apksigner" verify --print-certs "$apk" | sed -n 's/^Signer.*certificate SHA-256 digest: //p' | head -1)"
+          if [ "$signer" != "$(cat "$RUNNER_TEMP/key.txt")" ]; then
+            echo "::error::The APK is signed by $signer, not by the owner's key. Nothing is published."
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/release"
+          cp "$apk" "$RUNNER_TEMP/release/Capri-Android.apk"
+          echo "$signer" > "$RUNNER_TEMP/release/apk-signer.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android
+          path: ${{ runner.temp }}/release/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: release-android-test-reports
+          path: |
+            android/core/build/reports/tests/
+            android/app/build/reports/tests/
+
+  publish:
+    needs: [version, windows, android]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-windows
+          path: out
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-android
+          path: out
+      - name: Publish the Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          signer="$(cat out/apk-signer.txt)"
+          (cd out && sha256sum Capri-Setup.exe Capri-Android.apk > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          # This version's part of CHANGELOG.md: from its "## X.Y.Z" title to the next "## ".
+          changes="$(awk -v v="$VERSION" 'BEGIN { gsub(/\./, "\\.", v); title = "^## " v "([^0-9.]|$)" } $0 ~ title { on = 1; next } on && /^## / { exit } on { print }' CHANGELOG.md \
+            | sed -E "s#\]\((docs|android|desktop|contract|tools)/#](https://github.com/$GITHUB_REPOSITORY/blob/v$VERSION/\1/#g")"
+          {
+            echo "## Télécharger"
+            echo
+            echo "- **Capri Desktop** (Windows 10 et 11) : \`Capri-Setup.exe\`"
+            echo "- **Capri Android** (Android 11 ou plus) : \`Capri-Android.apk\`"
+            echo
+            echo "## Installer"
+            echo
+            echo "**Windows.** Lance \`Capri-Setup.exe\`. L'installeur n'a pas de certificat payant : si Windows affiche « Windows a protégé votre ordinateur », clique sur *Informations complémentaires* puis *Exécuter quand même*. Une Capri déjà installée est mise à jour et garde sa mémoire. Une Capri Desktop 2.0 ou plus récente propose aussi cette version toute seule."
+            echo
+            echo "**Android.** Ouvre \`Capri-Android.apk\` sur le téléphone et autorise l'installation depuis cette source. Par-dessus une Capri signée avec la même clé, c'est une mise à jour : elle garde sa mémoire. Si Android parle d'un conflit de paquet, ta Capri vient d'une autre clé : fais d'abord une sauvegarde chiffrée dans ses réglages, désinstalle-la, installe celle-ci, puis restaure."
+            echo
+            echo "## Vérifier"
+            echo
+            echo "Les sommes SHA-256 des deux fichiers sont dans \`SHA256SUMS.txt\`. Certificat qui signe l'APK (SHA-256) : \`$signer\`"
+            if [ -n "$changes" ]; then
+              echo
+              echo "## Changements"
+              echo
+              echo "$changes"
+            fi
+            echo
+            echo "---"
+            echo
+            echo "Capri Desktop est le projet **Capri** de Lachy (https://github.com/lachydotmcg/capri-desktop), sous licence PolyForm Noncommercial 1.0.0 : usage non commercial, crédit conservé. Ceci en est une version personnelle modifiée (Capri Link, Capri Android, personnalité adaptée à un usage adulte). Construit depuis le commit $GITHUB_SHA."
+          } > notes.md
+          gh release create "v$VERSION" out/Capri-Setup.exe out/Capri-Android.apk out/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Capri $VERSION" --notes-file notes.md --latest
+          echo "Published: https://github.com/$GITHUB_REPOSITORY/releases/tag/v$VERSION" >> "$GITHUB_STEP_SUMMARY"
