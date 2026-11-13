@@ -16,8 +16,8 @@ android {
         applicationId = "com.capri.assistant"
         minSdk = 30
         targetSdk = 36
-        versionCode = 20000
-        versionName = "2.0.0"
+        versionCode = 20001
+        versionName = "2.0.1"
         ndk {
             // The TECNO CL6k (Helio G99) is arm64. x86_64 keeps the Android Studio emulator working.
             abiFilters += listOf("arm64-v8a", "x86_64")

@@ -1,5 +1,7 @@
 # Capri Android: runs her engine's tests (Capri Link included, against the shared vector in contract/), builds the debug
 # APK, and a release APK signed with your own key when that key is in the repository's secrets (see docs/OUTILS.md).
+# With the secret CAPRI_DEBUG_KEYSTORE_B64 (docs/PUBLIER.md), the debug APK carries the owner's signature, like the published
+# ones, so it installs over the Capri already on their phone. Pull requests from forks never see secrets.
 # Download the result from the run's "Artifacts". Gradle's downloads are kept between runs to save minutes.
 name: Capri Android
 
@@ -23,6 +25,7 @@ jobs:
     timeout-minutes: 45
     env:
       HAS_KEY: ${{ secrets.CAPRI_KEYSTORE_B64 != '' }}
+      HAS_DEBUG_KEY: ${{ secrets.CAPRI_DEBUG_KEYSTORE_B64 != '' }}
     defaults:
       run:
         working-directory: android
@@ -39,6 +42,15 @@ jobs:
       - uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
+      # Android only installs an APK over an app signed with the same key, and this machine would make a throwaway one.
+      - name: Sign the debug APK with the owner's key
+        if: env.HAS_DEBUG_KEY == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.CAPRI_DEBUG_KEYSTORE_B64 }}
+        run: |
+          mkdir -p "$HOME/.android"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode --ignore-garbage > "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey > /dev/null
       - name: Test and build the debug APK
         run: |
           chmod +x gradlew

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="72" viewBox="0 0 360 72" role="img" aria-label="Télécharger Capri Desktop pour Windows">
+  <title>Télécharger Capri Desktop pour Windows</title>
+  <defs>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff5d66"/>
+      <stop offset="1" stop-color="#35e0ff"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d1526"/>
+      <stop offset="1" stop-color="#0f0a15"/>
+    </linearGradient>
+  </defs>
+  <rect x="1.5" y="1.5" width="357" height="69" rx="16" fill="url(#ground)" stroke="url(#edge)" stroke-width="3"/>
+  <!-- A screen on its stand, with an arrow coming down into it. -->
+  <g fill="none" stroke="#ff5d66" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="22" y="17" width="42" height="29" rx="4"/>
+    <path d="M35 56h16M43 46v10"/>
+    <path d="M43 24v13M37 32l6 6 6-6"/>
+  </g>
+  <g font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+    <text x="82" y="29" font-size="12" letter-spacing="2" fill="#b9aec8">TÉLÉCHARGER</text>
+    <text x="82" y="54" font-size="22" font-weight="700" fill="#ffffff">Capri Desktop</text>
+    <text x="338" y="29" font-size="12" text-anchor="end" fill="#35e0ff">Windows 10 · 11</text>
+  </g>
+</svg>
