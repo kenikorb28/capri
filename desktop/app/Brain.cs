@@ -4546,4 +4546,3 @@ namespace CapriDesktop
         internal static bool Is(string[] set, string line) { return Array.IndexOf(set, line) >= 0; }
     }
 }
-
