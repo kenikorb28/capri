@@ -1,0 +1,49 @@
+# Temporaire : lit les traces du test Windows qui a dépassé son temps (PR #2) et celles d'un test réussi, pour comparer.
+name: Diagnostic smoke (temporaire)
+
+on:
+  push:
+    branches: ["diag/**"]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  lire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Télécharger les deux archives
+        run: |
+          gh api repos/${{ github.repository }}/actions/artifacts/14035487827/zip > echec.zip
+          gh api repos/${{ github.repository }}/actions/artifacts/14034739705/zip > reussi.zip
+          ls -l *.zip
+      - name: Contenu (échec)
+        run: |
+          unzip -l echec.zip | awk '{print $1"\t"$2" "$3"\t"$4}' | sort -k2 | tail -n 400
+      - name: Traces (échec)
+        run: |
+          mkdir echec && cd echec && unzip -q ../echec.zip
+          for f in progress.txt steps-done.txt sections-done.txt hangs.txt failure.txt; do
+            for p in $(find . -name "$f"); do echo "=================== $p"; cat "$p"; echo; done
+          done
+          for p in $(find . -name smoke-test.txt); do echo "=================== $p ($(wc -l < "$p") lignes)"; grep -c '^PASS' "$p" || true; grep -v '^PASS' "$p" || true; echo "--- 40 dernières lignes"; tail -n 40 "$p"; done
+      - name: Contenu (réussi)
+        run: |
+          unzip -l reussi.zip | awk '{print $1"\t"$2" "$3"\t"$4}' | sort -k2 | tail -n 400
+      - name: Traces (réussi)
+        run: |
+          mkdir reussi && cd reussi && unzip -q ../reussi.zip
+          for f in progress.txt steps-done.txt sections-done.txt hangs.txt failure.txt; do
+            for p in $(find . -name "$f"); do echo "=================== $p"; cat "$p"; echo; done
+          done
+          for p in $(find . -name smoke-test.txt); do echo "=================== $p ($(wc -l < "$p") lignes)"; grep -c '^PASS' "$p" || true; grep -v '^PASS' "$p" || true; done
+      - name: Où s'arrête l'échec par rapport au réussi
+        run: |
+          a=$(find echec -name smoke-test.txt | head -1); b=$(find reussi -name smoke-test.txt | head -1)
+          n=$(wc -l < "$a"); echo "échec : $n lignes ; réussi : $(wc -l < "$b") lignes"
+          echo "--- lignes du réussi juste après le point d'arrêt"
+          sed -n "$((n-2)),$((n+25))p" "$b"
